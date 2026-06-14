@@ -1,33 +1,40 @@
 # hrp-portfolio
 
 > From-scratch Hierarchical Risk Parity (Lopez de Prado, 2016), benchmarked
-> honestly out-of-sample against Markowitz, IVP, and naive 1/N.
+> honestly out-of-sample against IVP and naive 1/N on real Polygon EOD data.
 
 [![CI](https://img.shields.io/badge/CI-pending-lightgrey)](https://github.com/FatihHekim0glu/hrp-portfolio)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
 ## Honest headline
 
-HRP does what it advertises on the dimension it actually targets — materially
-**lower out-of-sample portfolio variance** than Markowitz CLA, and it **never
-blows up on a near-singular covariance matrix** (no inversion required). But it
-does **not** reliably beat naive 1/N on out-of-sample Sharpe after transaction
-costs. On a point-in-time S&P 500 universe with walk-forward rebalancing and
-~10 bps/side costs, the HRP-vs-1/N Sharpe gap is economically small and
-**statistically insignificant** under the Jobson–Korkie–Memmel test, with the
-Deflated Sharpe Ratio near zero once the *full* configuration grid is counted as
-the number of trials.
+On a real Polygon end-of-day backtest — a 20-name large-cap basket, **893
+trading days (2021-06-15 .. 2024-12-31)**, monthly rebalance, 10 bps/side costs,
+252-day lookback — **HRP delivers the lowest out-of-sample volatility and never
+blows up, but it does *not* beat naive 1/N on after-cost Sharpe.**
 
-This is the literature-consistent outcome. De Prado (2016) claims lower OOS
-variance — not higher Sharpe — and DeMiguel, Garlappi & Uppal (2009) make 1/N a
-brutal benchmark that most "optimal" allocators fail to beat once estimation
-error is paid for. HRP is a **better-behaved risk allocator, not a return
-generator**. Its **lower turnover** versus Markowitz is its most defensible
-practical edge.
+- **HRP:** OOS Sharpe **0.817**, OOS vol **0.1199** (lowest of the three), avg turnover 0.096
+- **1/N:** OOS Sharpe **1.041**, OOS vol 0.1330, avg turnover 0.016
+- **IVP:** OOS Sharpe 0.784, OOS vol 0.1202, avg turnover 0.036
 
-The repository encodes this honesty as a regression: the `headline_verdict` is a
-pure function of `(jkm_pvalue, deflated_sharpe, bootstrap-CI sign)` and *cannot*
-emit "HRP beats 1/N" while the bootstrap confidence interval straddles zero.
+The HRP-vs-1/N Sharpe gap is **-0.224**. The Jobson–Korkie–Memmel test returns
+**p = 0.189 (not significant)**, and a stationary block-bootstrap puts the 95%
+confidence interval on the gap at **[-0.592, 0.123]**, which **straddles zero**.
+The verdict the repository emits is therefore **`NO_SIGNIFICANT_DIFFERENCE`**.
+
+This is the literature-consistent result. De Prado (2016) claims **lower OOS
+variance**, not higher Sharpe; DeMiguel, Garlappi & Uppal (2009) make 1/N a
+benchmark most "optimal" allocators fail to beat once estimation error is paid
+for. **HRP's real edge here is lower out-of-sample variance and robustness to a
+singular covariance matrix — not a higher Sharpe.** It is a better-behaved risk
+allocator, not a return generator.
+
+> **Survivorship caveat.** The basket is a *fixed current* large-cap set
+> (AAPL, MSFT, GOOGL, AMZN, JPM, BAC, XOM, CVX, JNJ, PFE, PG, KO, WMT, HD, CAT,
+> BA, NEE, DUK, VZ, T) and is therefore survivor-biased. A true point-in-time
+> universe would include names that were later delisted, which would pull all
+> three allocators' returns down. The numbers above should be read as an
+> *internal, like-for-like* comparison, not a clean live-trading estimate.
 
 ## Why this library
 
@@ -39,45 +46,38 @@ take shortcuts that flatter the method:
 - They use **equal intra-cluster weights** inside `getClusterVar` instead of the
   inverse-variance weights de Prado specifies.
 - They benchmark HRP against a **rigged comparison** — feeding each allocator a
-  *different* covariance estimator, or sinking max-Sharpe with a naive sample
-  mean — so the allocation rule is confounded with the estimator.
-- They report a single in-sample point estimate and **skip multiplicity
-  correction** entirely, so a "winning" Sharpe is indistinguishable from luck.
+  *different* covariance estimator — so the allocation rule is confounded with
+  the estimator.
+- They report a single in-sample point estimate and **skip significance testing**
+  entirely, so a "winning" Sharpe is indistinguishable from luck.
 
-This library exists to get those four things right and to answer **one question
-correctly**: does HRP deliver what the paper claims, and does that translate into
-a *statistically significant* risk-adjusted edge over naive diversification once
-realistic costs and estimation error are paid for?
+This library gets those four things right and answers **one question correctly**:
+does HRP deliver what the paper claims, and does that translate into a
+*statistically significant* risk-adjusted edge over naive diversification once
+realistic costs and estimation error are paid for? (On the real data above, the
+answer is: yes to lower variance, no to a significant Sharpe edge.)
 
-It is built for practitioners and researchers who want a **pure, typed, side-
-effect-free compute core** (`mypy --strict`, `py.typed`, zero import-time side
-effects) they can audit line by line, parity-tested to 1e-7 against independent
-reference implementations, with every footgun marked by an inline
-`HONESTY-REQUIREMENT` comment and every contested design choice justified in a
-numbered ADR.
+It is built for practitioners and researchers who want a **pure, typed,
+side-effect-free compute core** they can audit line by line, parity-tested
+against independent reference implementations.
 
 ## Method
 
-All four allocators are fed the **identical covariance estimator** on each
+All allocators are fed the **identical covariance estimator** on each
 walk-forward window (Ledoit–Wolf shrinkage by default), so the **allocation rule
-is the only treatment** ([ADR-0002](docs/decisions/0002-shared-covariance-fairness.md)).
-HRP itself is three hand-rolled, parity-tested stages.
+is the only treatment**. HRP itself is three hand-rolled, parity-tested stages.
 
-### 1. Tree clustering
+### 1. Tree clustering — correlation distance
 
-Convert the correlation matrix to a proper distance metric, then take a
-second-order Euclidean distance over the distance columns, then cluster with
-SciPy single linkage.
-
-The correlation distance is the **true metric**, not `1 - rho`
-([ADR-0004](docs/decisions/0004-distance-formula.md)):
+Convert the correlation matrix to a proper distance metric. The correlation
+distance is the **true metric**, not `1 - rho`:
 
 ```
 d_ij = sqrt(0.5 * (1 - rho_ij))
 ```
 
 This maps `rho = +1 -> d = 0`, `rho = 0 -> d = 1/sqrt(2)`, `rho = -1 -> d = 1`
-and satisfies the triangle inequality. The second-order co-distance is the
+and satisfies the triangle inequality. A second-order co-distance is then the
 Euclidean distance between the *columns* of `d`:
 
 ```
@@ -85,9 +85,7 @@ D_ij = sqrt( sum_k (d_ik - d_jk)^2 )
 ```
 
 so two assets are "close" when they relate to the rest of the universe in the
-same way. Single linkage is the paper default; `ward` / `complete` / `average`
-are exposed only as configurable ablations
-([ADR-0001](docs/decisions/0001-single-linkage-default.md)).
+same way. SciPy single linkage is the paper default.
 
 ### 2. Quasi-diagonalization
 
@@ -96,7 +94,7 @@ order, then reorders the covariance matrix so that **large covariances sit along
 the diagonal** and similar assets are adjacent. This is a pure permutation — a
 bijection on the asset index — and the reordered covariance stays symmetric.
 
-### 3. Recursive bisection
+### 3. Recursive bisection — inverse-variance cluster weights
 
 `getRecBipart` splits the ordered list top-down. At each split it allocates
 between the two sub-clusters **inversely to their cluster variance**, where each
@@ -104,128 +102,127 @@ cluster's variance is computed with **inverse-variance intra-cluster weights**
 via `getClusterVar` — *not* equal weights:
 
 ```
-w_cluster = diag(V)^-1 / sum( diag(V)^-1 )      # intra-cluster IVP weights
-var_cluster = w_cluster' V w_cluster            # cluster variance
+w_cluster   = diag(V)^-1 / sum( diag(V)^-1 )     # intra-cluster IVP weights
+var_cluster = w_cluster' V w_cluster             # cluster variance
 alpha_left  = 1 - var_left / (var_left + var_right)
 ```
 
 Weights cascade multiplicatively down the tree and the final vector lands on the
-simplex (sums to 1, all non-negative). No matrix is ever inverted, which is why
-HRP survives the singular covariance that breaks Markowitz CLA.
+simplex (sums to 1, all non-negative). **No matrix is ever inverted**, which is
+why HRP survives the singular covariance that breaks Markowitz CLA.
 
-### Estimating the inputs fairly
+### Shared-estimator fairness
 
-- **Covariance:** Ledoit–Wolf shrinkage by default, shared by all four
-  allocators; optional Marchenko–Pastur RMT eigenvalue clip
-  ([ADR-0002](docs/decisions/0002-shared-covariance-fairness.md)).
-- **Expected returns (max-Sharpe only):** an explicit James–Stein /
-  grand-mean-shrunk estimator, with the naive sample mean reported as an
-  ablation so the reader sees it is *`mu`-estimation noise*, not the allocator,
-  that sinks max-Sharpe ([ADR-0003](docs/decisions/0003-shrunk-mu.md)). The
-  **headline HRP-vs-1/N comparison is covariance-only and `mu`-immune.**
-- **No-lookahead:** covariance, shrinkage intensity, the RMT cutoff, the
-  dendrogram, and all weights are estimated on the in-sample window only, then
-  applied to the *subsequent* OOS window via `signal.shift(1)`. Purge and embargo
-  are re-derived for the portfolio setting in
-  [ADR-0005](docs/decisions/0005-purge-embargo.md), not cargo-culted from a pairs
-  config.
-- **Significance:** Jobson–Korkie–Memmel Sharpe-difference test +
-  Politis–Romano stationary block-bootstrap CIs on the Sharpe gap + Deflated
-  Sharpe Ratio whose `n_trials` is the **full configuration grid**
-  ([ADR-0006](docs/decisions/0006-dsr-multiplicity.md)).
+Every allocator on a given window receives the **same Ledoit–Wolf covariance**,
+so any performance difference is attributable to the *allocation rule alone* and
+not to a covariance-estimator advantage. Covariance, shrinkage intensity, the
+dendrogram, and all weights are estimated on the in-sample window only and
+applied to the *subsequent* OOS window — no lookahead.
 
-## Validation table
+## Results
 
-Every claim the library makes is pinned to an external reference, a numeric
-tolerance, and a test suite.
+Real Polygon EOD backtest. 20-name large-cap basket, 893 trading days
+(2021-06-15 .. 2024-12-31), monthly rebalance, 10 bps/side, 252-day lookback.
+
+| Allocator | OOS Sharpe | OOS vol      | Avg turnover |
+|-----------|-----------:|-------------:|-------------:|
+| **HRP**   |      0.817 | **0.1199** (lowest) |        0.096 |
+| 1/N       |  **1.041** |       0.1330 |        0.016 |
+| IVP       |      0.784 |       0.1202 |        0.036 |
+
+**HRP vs 1/N:** Sharpe gap **-0.224**; Jobson–Korkie–Memmel **p = 0.189** (not
+significant); block-bootstrap 95% CI on the gap **[-0.592, 0.123]** (straddles
+zero). **Verdict: `NO_SIGNIFICANT_DIFFERENCE`.**
+
+HRP wins on the dimension it actually targets — **lowest out-of-sample
+variance** — and ties (statistically) on Sharpe. That is exactly what the
+literature predicts.
+
+## Validation
+
+Every claim is pinned to an external reference, a numeric tolerance, and a test
+file you can run.
 
 | Claim | Reference | Tolerance | Test |
 |-------|-----------|-----------|------|
-| HRP weights match PyPortfolioOpt (+ second reference) on de Prado's worked example | de Prado (2016), AFML Ch. 16 | 1e-7 | `tests/parity/` |
-| Correlation distance is `sqrt(0.5(1-rho))`, not `1-rho` | de Prado (2016) | exact | `tests/unit/`, `tests/parity/` |
-| `getQuasiDiag` is a valid bijection; reordered covariance stays symmetric | de Prado (2016) | exact | `tests/property/` |
-| `getClusterVar` uses inverse-variance (not equal) intra-cluster weights | de Prado (2016) | 1e-7 | `tests/parity/`, `tests/unit/` |
-| Ledoit–Wolf shrinkage matches scikit-learn | Ledoit & Wolf (2004) | 1e-10 | `tests/parity/` |
-| JKM statistic matches Memmel closed form | Memmel (2003) | 1e-8 | `tests/parity/` |
-| DSR matches Bailey–LdP reference table (full `(k+2)/4` kurtosis term) | Bailey & LdP (2014) | 1e-4 | `tests/parity/` |
-| Weights live on the simplex (sum-to-1, all >= 0) | — | 1e-12 | `tests/property/` |
-| Scale- and permutation-invariance of allocations | — | 1e-10 | `tests/property/` |
-| No-lookahead: shrinkage intensity + RMT cutoff invariant to future data | — | exact | `tests/property/` |
-| DSR is non-increasing in `n_trials` | Bailey & LdP (2014) | — | `tests/property/` |
-| **HRP yields valid weights on a singular / block-perfectly-correlated covariance that breaks Markowitz CLA** | de Prado (2016) | — | `tests/regression/` |
-| **HRP OOS variance < Markowitz min-var on the fixture, while HRP-vs-1/N Sharpe-gap CI straddles zero** | this repo's honest null | — | `tests/regression/` |
-| `headline_verdict` truth table cannot claim a win while the CI straddles zero | — | exact | `tests/unit/`, `tests/property/` |
-| Determinism: same `RunManifest` seed -> byte-identical weights/gap/CI | — | exact | `tests/regression/` |
+| HRP weights match PyPortfolioOpt on de Prado's worked example | de Prado (2016) | ~1e-7 | [`tests/parity/test_parity_hrp_oracle.py`](tests/parity/test_parity_hrp_oracle.py) |
+| Ledoit–Wolf shrinkage matches `sklearn.covariance.LedoitWolf` | Ledoit & Wolf (2004) | 1e-10 | [`tests/parity/test_parity_hrp_oracle.py`](tests/parity/test_parity_hrp_oracle.py) |
+| Correlation distance is `sqrt(0.5(1-rho))`, not `1-rho` | de Prado (2016) | exact | [`tests/unit/`](tests/unit/), [`tests/parity/`](tests/parity/) |
+| `getQuasiDiag` is a valid bijection; reordered covariance stays symmetric | de Prado (2016) | exact | [`tests/property/test_invariants.py`](tests/property/test_invariants.py) |
+| Weights live on the simplex (sum-to-1, all >= 0) | — | 1e-12 | [`tests/property/test_invariants.py`](tests/property/test_invariants.py) |
+| HRP yields valid weights on a singular covariance that breaks Markowitz | de Prado (2016) | — | [`tests/regression/test_regression_hrp_horse_race.py`](tests/regression/test_regression_hrp_horse_race.py) |
+| `headline_verdict` cannot claim a win while the CI straddles zero | — | exact | [`tests/regression/`](tests/regression/), [`tests/unit/`](tests/unit/) |
+
+The PyPortfolioOpt oracle is dev-only and `importorskip`-guarded, so the parity
+suite skips cleanly in lean environments rather than hard-failing on import.
+
+## Data
+
+- **Real runs:** Polygon end-of-day OHLC. The headline numbers above come from a
+  Polygon EOD pull of the 20-name basket.
+- **Dev / CI:** a `yfinance -> Stooq -> synthetic` fallback chain. If `yfinance`
+  is unavailable or rate-limited, the loader falls back to Stooq, and finally to
+  a deterministic synthetic generator so the test suite stays hermetic and
+  offline-reproducible.
 
 ## Limitations
 
-These are disclosed, not hidden. Each has a corresponding caveat in the data
-strategy and an ADR or inline `HONESTY-REQUIREMENT` comment.
+These are disclosed, not hidden.
 
-- **Survivorship is mitigated, not eliminated.** A static current-S&P-500
-  universe would inflate every allocator's return and could spuriously favor
-  concentration, so the universe is rebuilt point-in-time at each rebalance.
-  **Residual blind spot:** Polygon Starter has no true historical
-  *index-membership* snapshots, so the PIT universe is a **liquidity/price-traded
-  approximation**, and delisting-return completeness is imperfect.
-- **New-constituent (estimable-universe) caveat.** A ticker entering the universe
-  at rebalance `t` with fewer than `lookback_window` observations known strictly
-  before `t` is **excluded** from that window's allocation (never padded), and the
-  exclusion is logged. This is a longer-listing bias, distinct from survivorship,
-  disclosed rather than hidden.
+- **Survivorship: the basket is fixed and survivor-biased.** The 20 names are a
+  *current* large-cap set, so every allocator's return is inflated relative to a
+  true point-in-time universe that would include later-delisted names. Read the
+  results as an internal like-for-like comparison.
+- **Index-membership PIT is approximated.** Polygon Starter has no true
+  historical index-membership snapshots, so any point-in-time universe is a
+  liquidity/price-traded approximation, and delisting-return completeness is
+  imperfect.
+- **Short window.** 893 trading days (~3.5 years, 2021-06-15 .. 2024-12-31) is a
+  single regime-limited sample. The insignificant Sharpe gap is consistent with
+  the literature but should not be over-extrapolated to other periods or
+  universes.
 - **1/N is a brutal benchmark.** Per DeMiguel, Garlappi & Uppal (2009), HRP is
   *expected* to tie or lose on Sharpe after costs. The honest finding is the
-  insignificant gap — the repository resists cherry-picking by deriving the
-  verdict purely from the JKM p-value, the DSR, and the bootstrap-CI sign.
-- **The Sharpe edge is insignificant by design of the test, not by tuning.**
-  DSR `n_trials` counts the full explored grid (#allocators × #linkages ×
-  #covariance-estimators × #rmt × #rebalance-freqs × #cost-levels ×
-  #lookback-windows), so a "winning" configuration found by search is correctly
-  deflated toward zero.
+  insignificant gap — the verdict is derived purely from the JKM p-value and the
+  bootstrap-CI sign, not from cherry-picking.
 
 ## Reproduce
 
 ```bash
-# install with the dev + data extras
-uv sync --extra dev --extra data
+# create the env and install with the dev extras
+uv venv
+uv pip install -e '.[dev]'
 
-# run the full test suite (unit, property, parity, regression, integration)
-uv run pytest
+# run the full test suite (220 tests, ~91% coverage)
+pytest
 
-# run only the parity oracles and the honest-null regressions
-uv run pytest -m parity
-uv run pytest -m regression
-
-# type-check (strict) and lint
-uv run mypy
-uv run ruff check .
-
-# run the walk-forward horse race
-uv run hrp run --help
+# real Polygon backtest: 20-name basket, 893 days, monthly rebalance,
+# 10 bps/side, 252-day lookback (tickers are a positional, space-separated list)
+hrp run \
+  AAPL MSFT GOOGL AMZN JPM BAC XOM CVX JNJ PFE PG KO WMT HD CAT BA NEE DUK VZ T \
+  --start 2021-06-15 --end 2024-12-31 \
+  --rebalance monthly --cost-bps 10 --lookback-window 252 \
+  --data-source polygon
 ```
 
-A fixed `RunManifest` seed makes the horse race deterministic: the same seed
-yields byte-identical weights, Sharpe gap, and bootstrap CI.
+`--data-source polygon` requires a `POLYGON_API_KEY` in your environment (or a
+`.env` file). On any failure — or with the default `--data-source auto` — the
+loader falls back to the `yfinance -> Stooq -> synthetic` dev chain.
 
-## References
+## Install
 
-- Lopez de Prado (2016), *Building Diversified Portfolios that Outperform
-  Out-of-Sample*, JPM 42(4). SSRN
-  [2708678](https://papers.ssrn.com/sol3/papers.cfm?abstract_id=2708678).
-- Lopez de Prado (2018), *Advances in Financial Machine Learning*, Ch. 16
-  (`getQuasiDiag`, `getRecBipart`, `getClusterVar`, `correlDist`).
-- DeMiguel, Garlappi & Uppal (2009), *Optimal Versus Naive Diversification*,
-  RFS 22(5).
-- Bailey & Lopez de Prado (2014), *The Deflated Sharpe Ratio*, JPM
-  (`n_trials` and the `(k+2)/4` kurtosis term).
-- Memmel (2003) / Jobson & Korkie (1981), Sharpe-difference test.
-- Politis & Romano (1994), the stationary bootstrap.
-- Ledoit & Wolf (2004), honest covariance-matrix shrinkage.
-- Marchenko & Pastur (1967) / Plerou et al. (1999), RMT eigenvalue clipping.
-- James & Stein (1961), shrinkage estimation of the mean.
-- Andrews (1991), HAC / Newey–West bandwidth selection.
-- PyPortfolioOpt / Riskfolio-Lib / mlfinlab — HRP parity oracles (dev-only).
-- *Estimation Windows in HRP Methods*, Springer (2024) — OOS sensitivity.
+```bash
+uv venv
+uv pip install -e '.[dev]'     # dev + parity-oracle + lint/type/test stack
+# extras: '.[data]' for the data path, '.[viz]' for Plotly figures,
+#         '.[all]' for every runtime extra
+```
+
+The console entry point `hrp` is installed alongside the package.
+
+## License
+
+[MIT](LICENSE).
 
 ## Live link
 

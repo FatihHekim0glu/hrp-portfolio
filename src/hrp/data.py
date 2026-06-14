@@ -24,7 +24,7 @@ from hrp._validation import ensure_dataframe
 
 #: Where a price/return panel ultimately came from. Returned alongside data so
 #: callers (and the API ``data_source`` field) can report provenance.
-DataSource = Literal["yfinance", "stooq", "synthetic", "cache"]
+DataSource = Literal["polygon", "yfinance", "stooq", "synthetic", "cache"]
 
 # quantcore-candidate: mirrors markowitz / risk-metrics data.py (yfinance->stooq
 # fallback + synthetic GBM + FRED-via-CSV risk-free).
@@ -71,6 +71,21 @@ def _synthetic_prices(tickers: list[str], start: date, end: date) -> pd.DataFram
     start_prices = gen.uniform(20.0, 200.0, size=n_assets)
     prices = start_prices * np.exp(np.cumsum(log_returns, axis=0))
     return pd.DataFrame(prices, index=index, columns=tickers, dtype="float64")
+
+
+def _fetch_polygon(tickers: list[str], start: date, end: date) -> pd.DataFrame:
+    """Fetch daily adjusted-close prices from Polygon (lazy import). May raise.
+
+    LAZY IMPORT: :class:`hrp.data_providers.polygon.PolygonProvider` (and, inside
+    it, ``httpx``) are imported here, never at module import time. The provider
+    returns a wide ``date x ticker`` panel of adjusted closes, inner-joined.
+    """
+    from hrp.data_providers.polygon import PolygonProvider
+
+    frame = PolygonProvider().fetch(tickers, start, end)
+    if frame.empty or frame.isna().all(axis=None):
+        raise ValueError("Polygon returned no usable price data.")
+    return frame
 
 
 def _fetch_yfinance(tickers: list[str], start: date, end: date) -> pd.DataFrame:
@@ -148,17 +163,20 @@ def get_prices(
     start: date,
     end: date,
     *,
-    source_pref: Literal["yfinance", "stooq", "auto"] = "auto",
+    source_pref: Literal["polygon", "yfinance", "stooq", "auto"] = "auto",
     use_cache: bool = True,
 ) -> tuple[pd.DataFrame, DataSource]:
     """Fetch a wide panel of adjusted close prices with graceful fallback.
 
     Resolution order (``source_pref="auto"``): yfinance -> Stooq -> a
     deterministic synthetic panel (so the library is usable offline and in CI).
-    Results are cached to parquet/diskcache when ``use_cache`` is set.
+    With ``source_pref="polygon"`` the real Polygon EOD provider is tried first
+    and, on any failure, falls through to the yfinance -> stooq -> synthetic
+    chain. Results are cached to parquet/diskcache when ``use_cache`` is set.
 
-    LAZY IMPORT: yfinance/curl_cffi/pandas-datareader (the ``data`` extra) are
-    imported inside this function, never at module import time.
+    LAZY IMPORT: polygon/httpx, yfinance/curl_cffi/pandas-datareader (the
+    ``data`` extra) are imported inside this function, never at module import
+    time.
 
     Parameters
     ----------
@@ -167,7 +185,9 @@ def get_prices(
     start, end:
         Inclusive date range.
     source_pref:
-        Preferred source; ``"auto"`` tries the full fallback chain.
+        Preferred source. ``"auto"`` tries yfinance -> stooq -> synthetic;
+        ``"polygon"`` prepends the real Polygon provider, then falls through to
+        that same chain on failure.
     use_cache:
         Whether to read/write the parquet/diskcache cache.
 
@@ -189,8 +209,16 @@ def get_prices(
         raise ValidationError(f"get_prices: end ({end}) must be after start ({start}).")
 
     # Build the ordered fallback chain from the preference.
-    if source_pref == "yfinance":
-        chain: list[tuple[DataSource, object]] = [("yfinance", _fetch_yfinance)]
+    if source_pref == "polygon":
+        # Try the real Polygon provider first, then fall through to the existing
+        # yfinance -> stooq (-> synthetic) chain on any failure.
+        chain: list[tuple[DataSource, object]] = [
+            ("polygon", _fetch_polygon),
+            ("yfinance", _fetch_yfinance),
+            ("stooq", _fetch_stooq),
+        ]
+    elif source_pref == "yfinance":
+        chain = [("yfinance", _fetch_yfinance)]
     elif source_pref == "stooq":
         chain = [("stooq", _fetch_stooq)]
     else:  # "auto": full chain.
