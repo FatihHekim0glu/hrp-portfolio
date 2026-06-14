@@ -1,0 +1,42 @@
+cff-version: 1.2.0
+message: "If you use this software, please cite it as below."
+title: "hrp-portfolio: From-scratch Hierarchical Risk Parity, benchmarked honestly out-of-sample"
+abstract: >-
+  A pure, typed Python implementation of Lopez de Prado's Hierarchical Risk
+  Parity (2016) — tree clustering, quasi-diagonalization, recursive bisection —
+  benchmarked out-of-sample against Markowitz (min-variance and max-Sharpe),
+  inverse-variance (IVP), and the DeMiguel 1/N naive portfolio under realistic
+  transaction costs and estimation error.
+type: software
+version: 0.1.0
+date-released: "2026-06-14"
+license: MIT
+repository-code: "https://github.com/FatihHekim0glu/hrp-portfolio"
+url: "https://fatihhekimoglu.com"
+authors:
+  - family-names: "FatihHekim0glu"
+keywords:
+  - hierarchical-risk-parity
+  - portfolio-optimization
+  - quantitative-finance
+  - clustering
+  - risk-parity
+references:
+  - type: article
+    title: "Building Diversified Portfolios that Outperform Out-of-Sample"
+    authors:
+      - family-names: "Lopez de Prado"
+        given-names: "Marcos"
+    journal: "The Journal of Portfolio Management"
+    volume: 42
+    issue: 4
+    year: 2016
+  - type: article
+    title: "The Deflated Sharpe Ratio: Correcting for Selection Bias, Backtest Overfitting, and Non-Normality"
+    authors:
+      - family-names: "Bailey"
+        given-names: "David H."
+      - family-names: "Lopez de Prado"
+        given-names: "Marcos"
+    journal: "The Journal of Portfolio Management"
+    year: 2014
