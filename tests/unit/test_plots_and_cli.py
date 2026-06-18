@@ -62,9 +62,7 @@ def test_dendrogram_figure_shape_and_title(
 ) -> None:
     """Dendrogram builder returns a serializable figure with the default title."""
     labels = list(one_factor_returns.columns)
-    fig = _assert_figure_dict(
-        plots.dendrogram_figure(hrp_result.link, labels)
-    )
+    fig = _assert_figure_dict(plots.dendrogram_figure(hrp_result.link, labels))
 
     # A dendrogram of N leaves draws N-1 merge links -> non-empty trace list.
     assert len(fig["data"]) > 0
@@ -78,9 +76,7 @@ def test_dendrogram_figure_accepts_list_link() -> None:
         [0.0, 1.0, 0.5, 2.0],
         [2.0, 3.0, 1.0, 3.0],
     ]
-    fig = _assert_figure_dict(
-        plots.dendrogram_figure(np.asarray(link), ["A", "B", "C"])
-    )
+    fig = _assert_figure_dict(plots.dendrogram_figure(np.asarray(link), ["A", "B", "C"]))
     assert len(fig["data"]) > 0
 
 
@@ -95,9 +91,7 @@ def test_quasidiag_heatmap_before_is_raw_order(
     n = corr.shape[0]
     identity_order = list(range(n))
 
-    fig = _assert_figure_dict(
-        plots.quasidiag_heatmap_figure(corr, identity_order)
-    )
+    fig = _assert_figure_dict(plots.quasidiag_heatmap_figure(corr, identity_order))
     trace = fig["data"][0]
     assert trace["type"] == "heatmap"
     assert trace["zmin"] == -1.0 and trace["zmax"] == 1.0
@@ -120,9 +114,7 @@ def test_quasidiag_heatmap_after_reorders_rows_and_cols(
     # Group the two correlated pairs (0,1) and (2,3) by reversing block order.
     order = [2, 3, 0, 1]
 
-    fig = _assert_figure_dict(
-        plots.quasidiag_heatmap_figure(corr, order, title="after")
-    )
+    fig = _assert_figure_dict(plots.quasidiag_heatmap_figure(corr, order, title="after"))
     trace = fig["data"][0]
     z = np.asarray(trace["z"])
     expected = corr.to_numpy()[np.ix_(order, order)]
@@ -138,15 +130,11 @@ def test_quasidiag_heatmap_after_reorders_rows_and_cols(
 def test_quasidiag_heatmap_accepts_plain_ndarray() -> None:
     """A bare ndarray (no labels) yields integer-string axis labels."""
     mat = np.array([[1.0, 0.3], [0.3, 1.0]])
-    fig = _assert_figure_dict(
-        plots.quasidiag_heatmap_figure(mat, [1, 0])
-    )
+    fig = _assert_figure_dict(plots.quasidiag_heatmap_figure(mat, [1, 0]))
     trace = fig["data"][0]
     # order=[1,0] swaps the labels derived from positions.
     assert trace["x"] == ["1", "0"]
-    np.testing.assert_allclose(
-        np.asarray(trace["z"]), mat[np.ix_([1, 0], [1, 0])]
-    )
+    np.testing.assert_allclose(np.asarray(trace["z"]), mat[np.ix_([1, 0], [1, 0])])
 
 
 # --------------------------------------------------------------------------- #
@@ -161,9 +149,7 @@ def test_weights_figure_horizontal_bar_values(hrp_result: HRPResult) -> None:
     assert trace["type"] == "bar"
     assert trace["orientation"] == "h"
     assert trace["y"] == [str(idx) for idx in weights.index]
-    np.testing.assert_allclose(
-        np.asarray(trace["x"]), weights.to_numpy()
-    )
+    np.testing.assert_allclose(np.asarray(trace["x"]), weights.to_numpy())
     # Simplex weights sum to one; the bar values preserve that.
     assert sum(trace["x"]) == pytest.approx(1.0)
     assert fig["layout"]["title"] == {"text": "Portfolio weights"}
@@ -172,9 +158,7 @@ def test_weights_figure_horizontal_bar_values(hrp_result: HRPResult) -> None:
 def test_weights_figure_accepts_mapping() -> None:
     """A plain dict of weights is coerced to a Series and rendered by label order."""
     fig = _assert_figure_dict(
-        plots.weights_figure(
-            pd.Series({"X": 0.25, "Y": 0.75}), title="custom"
-        )
+        plots.weights_figure(pd.Series({"X": 0.25, "Y": 0.75}), title="custom")
     )
     trace = fig["data"][0]
     assert trace["y"] == ["X", "Y"]
@@ -200,9 +184,7 @@ def test_oos_equity_figure_one_trace_per_column() -> None:
         assert trace["type"] == "scatter"
         assert trace["mode"] == "lines"
         col = trace["name"]
-        np.testing.assert_allclose(
-            np.asarray(trace["y"]), curves[col].to_numpy()
-        )
+        np.testing.assert_allclose(np.asarray(trace["y"]), curves[col].to_numpy())
     # The shared x-axis carries ISO date strings (timestamps did not leak).
     hrp_trace = next(t for t in fig["data"] if t["name"] == "hrp")
     assert hrp_trace["x"][0] == index[0].isoformat()
@@ -224,9 +206,7 @@ def test_sharpe_gap_bootstrap_figure_histogram_and_markers() -> None:
     ci_low, ci_high = -0.05, 0.15
 
     fig = _assert_figure_dict(
-        plots.sharpe_gap_bootstrap_figure(
-            samples, ci_low=ci_low, ci_high=ci_high
-        )
+        plots.sharpe_gap_bootstrap_figure(samples, ci_low=ci_low, ci_high=ci_high)
     )
     trace = fig["data"][0]
     assert trace["type"] == "histogram"
@@ -248,23 +228,15 @@ def test_sharpe_gap_bootstrap_figure_histogram_and_markers() -> None:
 def test_sharpe_gap_bootstrap_figure_accepts_series() -> None:
     """A pandas Series of samples is flattened to the histogram x-values."""
     series = pd.Series([0.01, -0.01, 0.02, 0.0])
-    fig = _assert_figure_dict(
-        plots.sharpe_gap_bootstrap_figure(series, ci_low=-0.01, ci_high=0.02)
-    )
-    np.testing.assert_allclose(
-        np.asarray(fig["data"][0]["x"]), series.to_numpy()
-    )
+    fig = _assert_figure_dict(plots.sharpe_gap_bootstrap_figure(series, ci_low=-0.01, ci_high=0.02))
+    np.testing.assert_allclose(np.asarray(fig["data"][0]["x"]), series.to_numpy())
 
 
 def test_sharpe_gap_bootstrap_figure_accepts_2d_array() -> None:
     """A 2-D array of samples is raveled to a flat histogram input."""
     arr = np.array([[0.01, -0.01], [0.02, 0.03]])
-    fig = _assert_figure_dict(
-        plots.sharpe_gap_bootstrap_figure(arr, ci_low=-0.01, ci_high=0.03)
-    )
-    np.testing.assert_allclose(
-        np.asarray(fig["data"][0]["x"]), arr.ravel()
-    )
+    fig = _assert_figure_dict(plots.sharpe_gap_bootstrap_figure(arr, ci_low=-0.01, ci_high=0.03))
+    np.testing.assert_allclose(np.asarray(fig["data"][0]["x"]), arr.ravel())
 
 
 # --------------------------------------------------------------------------- #
@@ -275,9 +247,7 @@ def test_cli_demo_runs_offline_and_exits_zero() -> None:
     from typer.testing import CliRunner
 
     runner = CliRunner()
-    result = runner.invoke(
-        build_app(), ["demo", "--n-assets", "6", "--n-bootstrap", "50"]
-    )
+    result = runner.invoke(build_app(), ["demo", "--n-assets", "6", "--n-bootstrap", "50"])
 
     assert result.exit_code == 0, result.output
     # The summary header and the synthetic-data marker confirm the pipeline ran

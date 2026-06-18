@@ -4,7 +4,8 @@ These tests MOCK the HTTP layer end-to-end and assert that NO real network call
 ever happens:
 
 - the stdlib path (used when ``httpx`` is absent) is exercised by monkeypatching
-  ``urllib.request.urlopen``;
+  ``urllib.request.urlopen`` and blocking the lazy ``import httpx`` (so the path
+  is taken even when httpx is installed via the ``data`` extra);
 - the ``httpx`` path is exercised by injecting a fake ``httpx`` module into
   ``sys.modules`` so the provider's lazy ``import httpx`` resolves to a stub.
 
@@ -114,14 +115,18 @@ class _FakeUrlopenResponse:
         return self._body
 
 
-def _install_urlopen(
-    monkeypatch: pytest.MonkeyPatch, handler: Any
-) -> list[str]:
+def _install_urlopen(monkeypatch: pytest.MonkeyPatch, handler: Any) -> list[str]:
     """Install a fake ``urllib.request.urlopen`` and record the URLs it is called with.
 
     ``handler(url) -> dict`` returns the JSON payload to serve for that URL, or
     may raise an ``urllib.error.HTTPError`` to simulate an HTTP status.
+
+    To exercise the stdlib fallback deterministically (httpx is installed via the
+    ``data`` extra in CI), this also blocks the provider's lazy ``import httpx`` by
+    setting ``sys.modules["httpx"] = None``, forcing the urllib code path.
     """
+    monkeypatch.setitem(sys.modules, "httpx", None)
+
     calls: list[str] = []
 
     def _fake_urlopen(url: str, *args: object, **kwargs: object) -> _FakeUrlopenResponse:
@@ -248,9 +253,7 @@ def test_fetch_inner_joins_across_tickers(monkeypatch: pytest.MonkeyPatch) -> No
 
 def test_fetch_raises_on_empty_results(monkeypatch: pytest.MonkeyPatch) -> None:
     """A payload with no ``results`` raises (caller decides on fallback)."""
-    _install_urlopen(
-        monkeypatch, lambda _url: {"ticker": "X", "status": "OK", "results": []}
-    )
+    _install_urlopen(monkeypatch, lambda _url: {"ticker": "X", "status": "OK", "results": []})
     provider = PolygonProvider(api_key=_API_KEY)
     with pytest.raises(ValueError, match="no results"):
         provider.fetch(["AAPL"], date(2021, 1, 4), date(2021, 1, 8))
@@ -324,9 +327,7 @@ def test_urllib_does_not_retry_non_429(monkeypatch: pytest.MonkeyPatch) -> None:
 
 def test_fetch_uses_httpx_when_available(monkeypatch: pytest.MonkeyPatch) -> None:
     """When ``httpx`` imports, the provider uses it and parses the response."""
-    fake = _install_fake_httpx(
-        monkeypatch, script=[(200, _payload([55.0, 56.0, 57.0]))]
-    )
+    fake = _install_fake_httpx(monkeypatch, script=[(200, _payload([55.0, 56.0, 57.0]))])
 
     provider = PolygonProvider(api_key=_API_KEY)
     frame = provider.fetch(["MSFT"], date(2021, 1, 4), date(2021, 1, 8))

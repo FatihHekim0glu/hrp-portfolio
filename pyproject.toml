@@ -63,6 +63,11 @@ viz = [
 app = [
     "streamlit>=1.33",
 ]
+# Console entry point (the ``hrp`` command). Typer is imported lazily inside
+# hrp.cli, but it is a real runtime dependency of the CLI surface.
+cli = [
+    "typer>=0.12",
+]
 # Developer + parity-oracle + lint/type/test stack.
 dev = [
     "pytest>=8.0",
@@ -72,6 +77,7 @@ dev = [
     "ruff>=0.5",
     "mypy>=1.10",
     "pandas-stubs>=2.0",
+    "typer>=0.12",
 ]
 # Convex max-Sharpe solver (lazily imported inside functions only).
 cvxpy = [
@@ -88,6 +94,7 @@ all = [
     "plotly>=5.20",
     "kaleido>=0.2.1",
     "streamlit>=1.33",
+    "typer>=0.12",
     "cvxpy>=1.4",
 ]
 
@@ -130,7 +137,8 @@ select = [
 ]
 ignore = [
     "E501",    # line length handled by formatter
-    "PD901",   # allow `df` as a variable name in compute kernels
+    "RUF022",  # keep `__all__` grouped by category (with comments), not A-Z sorted
+    "UP042",   # prefer explicit `(str, Enum)` mixin over StrEnum (house convention)
 ]
 
 [tool.ruff.lint.per-file-ignores]
@@ -167,13 +175,11 @@ disallow_untyped_defs = false
 module = [
     "scipy.*",
     "sklearn.*",
-    "statsmodels.*",
     "cvxpy.*",
     "yfinance.*",
+    "curl_cffi.*",
     "pandas_datareader.*",
-    "diskcache.*",
     "plotly.*",
-    "pypfopt.*",
     "httpx.*",
 ]
 ignore_missing_imports = true
