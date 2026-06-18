@@ -17,10 +17,10 @@ from numpy.typing import NDArray
 
 # quantcore-candidate: mirrors factorlab:src/factorlab/_typing.py
 
-#: A wide panel of asset returns: rows indexed by time, columns by asset.
-#: Accepted at the boundary as a DataFrame, an ndarray, or a mapping coercible
-#: to a DataFrame; canonicalized to ``pd.DataFrame`` internally.
-ReturnsLike: TypeAlias = "pd.DataFrame | NDArray[np.float64]"
+#: A panel (or single column) of asset returns: rows indexed by time, columns by
+#: asset. Accepted at the boundary as a DataFrame, a Series (a single return
+#: stream), or an ndarray; canonicalized via :mod:`hrp._validation` internally.
+ReturnsLike: TypeAlias = "pd.DataFrame | pd.Series | NDArray[np.float64]"
 
 #: A wide panel of asset prices (levels). Same shape conventions as
 #: :data:`ReturnsLike`; differenced via ``pct_change(fill_method=None)``.

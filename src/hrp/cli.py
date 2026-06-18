@@ -39,7 +39,7 @@ def build_app() -> typer.Typer:
     cli = typer.Typer(
         name="hrp",
         add_completion=False,
-        help="Hierarchical Risk Parity — benchmarked honestly OOS against "
+        help="Hierarchical Risk Parity - benchmarked honestly OOS against "
         "Markowitz, IVP, and naive 1/N.",
         no_args_is_help=True,
     )
@@ -119,9 +119,7 @@ def _resolve_cov_estimator(name: str) -> Any:
     if name not in estimators:
         from hrp._exceptions import ValidationError
 
-        raise ValidationError(
-            f"covariance must be one of {sorted(estimators)}, got {name!r}."
-        )
+        raise ValidationError(f"covariance must be one of {sorted(estimators)}, got {name!r}.")
     return estimators[name]
 
 
@@ -172,7 +170,10 @@ def run(**kwargs: Any) -> int:
     try:
         # --- Load data ----------------------------------------------------
         prices, data_source = get_prices(
-            tickers, start, end, source_pref=data_source_pref  # type: ignore[arg-type]
+            tickers,
+            start,
+            end,
+            source_pref=data_source_pref,  # type: ignore[arg-type]
         )
         returns = compute_returns(prices)
         returns = returns.dropna(axis=1, how="all").dropna(axis=0, how="any")
@@ -215,9 +216,7 @@ def run(**kwargs: Any) -> int:
         naive_oos = oos_returns["naive_1n"]
 
         # --- Sharpe-difference inference (HRP vs 1/N) ---------------------
-        comparison = block_bootstrap_sharpe_gap(
-            hrp_oos, naive_oos, n_bootstrap=n_bootstrap
-        )
+        comparison = block_bootstrap_sharpe_gap(hrp_oos, naive_oos, n_bootstrap=n_bootstrap)
 
         hrp_sharpe = sharpe_ratio(hrp_oos)
         naive_sharpe = sharpe_ratio(naive_oos)

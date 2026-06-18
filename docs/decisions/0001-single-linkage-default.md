@@ -14,7 +14,7 @@ average, and ward all produce different dendrograms, different leaf orders after
 quasi-diagonalization, and therefore different weights.
 
 A recurring footgun in public implementations is silently shipping `ward` or
-`average` — often because it is a library default or "looks smoother" — while
+`average` (often because it is a library default or "looks smoother") while
 citing de Prado. That drift is invisible at the API surface but moves the
 allocation, so a benchmark built on the wrong default is not reproducing the
 paper.
@@ -28,7 +28,7 @@ the diagonal.
 ## Decision
 
 `single` is the **validated default** linkage. `ward`, `complete`, and `average`
-are exposed as **configurable ablations only** — selectable via the `linkage`
+are exposed as **configurable ablations only**, selectable via the `linkage`
 parameter for sensitivity analysis, never silently substituted.
 
 The default is asserted, not assumed: the parity oracle reconciles our
@@ -42,8 +42,8 @@ test catches any drift in the shipped default.
 - **Positive.** Because the alternatives are first-class ablations, a reader can
   quantify how much the verdict depends on the criterion.
 - **Cost.** Every linkage we expose multiplies the DSR `n_trials`
-  ([ADR-0006](0006-dsr-multiplicity.md)). This is correct accounting — exploring
-  more criteria *should* deflate any "best" Sharpe — but it means more linkages
+  ([ADR-0006](0006-dsr-multiplicity.md)). This is correct accounting (exploring
+  more criteria *should* deflate any "best" Sharpe) but it means more linkages
   is not free.
 - **Risk addressed.** "Linkage drift" (silent ward/average default) is eliminated
   by the asserted default plus the parity test.

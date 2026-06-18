@@ -1,4 +1,4 @@
-# ADR-0003: Max-Sharpe uses a James–Stein shrunk mean, with naive mu as an ablation
+# ADR-0003: Max-Sharpe uses a James-Stein shrunk mean, with naive mu as an ablation
 
 - **Status:** Accepted
 - **Date:** 2026-06-14
@@ -13,21 +13,21 @@ sample mean return is a notoriously noisy estimator: its estimation error
 dominates portfolio optimization and is the main reason "optimal" mean-variance
 portfolios underperform 1/N out of sample (DeMiguel, Garlappi & Uppal 2009).
 
-If we fed max-Sharpe the **naive sample mean**, it would post a dismal OOS Sharpe
-— and a careless reader could conclude "the max-Sharpe *allocator* is bad." That
+If we fed max-Sharpe the **naive sample mean**, it would post a dismal OOS Sharpe,
+and a careless reader could conclude "the max-Sharpe *allocator* is bad." That
 conclusion would be wrong: the failure is `mu`-*estimation* noise, not the
 allocation rule. Reporting only naive `mu` would itself be a subtle rigging of the
 comparison, just in the opposite direction from [ADR-0002](0002-shared-covariance-fairness.md).
 
 ## Decision
 
-The max-Sharpe allocator's `mu` is an **explicit James–Stein / grand-mean-shrunk
+The max-Sharpe allocator's `mu` is an **explicit James-Stein / grand-mean-shrunk
 estimator** (`estimators/mu.py`), shrinking each asset's sample mean toward the
 cross-sectional grand mean. The **naive sample mean is reported as an ablation**,
-so the reader can see directly that switching `mu` estimators — not switching
-allocators — is what moves max-Sharpe.
+so the reader can see directly that switching `mu` estimators, not switching
+allocators, is what moves max-Sharpe.
 
-Crucially, the **headline comparison is HRP vs 1/N**, which is covariance-only and
+Note that the **headline comparison is HRP vs 1/N**, which is covariance-only and
 therefore **`mu`-immune**. The `mu` choice never touches the headline verdict; it
 only affects the max-Sharpe context line.
 

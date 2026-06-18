@@ -9,7 +9,7 @@ space, not just on hand-picked examples:
   leaves the HRP weights unchanged (correlation, distance, linkage, and the
   inverse-variance *ratios* are all invariant to a global variance rescale).
 - **HRP permutation-equivariance.** Permuting the asset order permutes the
-  weights identically — HRP carries no positional bias.
+  weights identically - HRP carries no positional bias.
 - **Quasi-diagonalisation is a bijection.** ``get_quasi_diag`` returns a valid
   permutation of ``range(N)``.
 - **Estimator-level no-lookahead.** HRP weights computed on an in-sample window
@@ -191,9 +191,7 @@ def test_hrp_weights_on_simplex_from_returns(panel: pd.DataFrame) -> None:
 @_SETTINGS
 @given(
     cov=continuous_covariances(),
-    scale=st.floats(
-        min_value=1e-3, max_value=1e3, allow_nan=False, allow_infinity=False
-    ),
+    scale=st.floats(min_value=1e-3, max_value=1e3, allow_nan=False, allow_infinity=False),
 )
 def test_hrp_scale_invariance(cov: pd.DataFrame, scale: float) -> None:
     """Scaling the covariance by a positive scalar leaves HRP weights unchanged.
@@ -224,9 +222,7 @@ def test_hrp_scale_invariance(cov: pd.DataFrame, scale: float) -> None:
 
 
 @_SETTINGS
-@given(
-    cov=continuous_covariances(), seed=st.integers(min_value=0, max_value=2**31 - 1)
-)
+@given(cov=continuous_covariances(), seed=st.integers(min_value=0, max_value=2**31 - 1))
 def test_hrp_permutation_equivariance(cov: pd.DataFrame, seed: int) -> None:
     """HRP is permutation-equivariant when the dendrogram is permutation-stable.
 
@@ -246,9 +242,7 @@ def test_hrp_permutation_equivariance(cov: pd.DataFrame, seed: int) -> None:
     base = hrp_allocate(pd.DataFrame(columns=cov.columns), cov=cov)
 
     permuted_cov = cov.iloc[perm, :].iloc[:, perm]
-    permuted = hrp_allocate(
-        pd.DataFrame(columns=permuted_cov.columns), cov=permuted_cov
-    )
+    permuted = hrp_allocate(pd.DataFrame(columns=permuted_cov.columns), cov=permuted_cov)
 
     # Permutation-stability gate: the permuted run's leaf order, mapped back to
     # the original labels, must equal the base run's leaf order. ``perm[k]`` is
@@ -261,9 +255,7 @@ def test_hrp_permutation_equivariance(cov: pd.DataFrame, seed: int) -> None:
     # On the stable subspace HRP is genuinely equivariant: the weight attached to
     # each *asset label* is independent of presentation order.
     aligned = permuted.weights.reindex(base.weights.index)
-    np.testing.assert_allclose(
-        base.weights.to_numpy(), aligned.to_numpy(), rtol=1e-9, atol=1e-12
-    )
+    np.testing.assert_allclose(base.weights.to_numpy(), aligned.to_numpy(), rtol=1e-9, atol=1e-12)
 
 
 # --------------------------------------------------------------------------- #
@@ -334,9 +326,7 @@ def test_hrp_no_lookahead(panel: pd.DataFrame, split_frac: float, seed: int) -> 
 # --------------------------------------------------------------------------- #
 @_SETTINGS
 @given(
-    observed_sharpe=st.floats(
-        min_value=-0.5, max_value=0.5, allow_nan=False, allow_infinity=False
-    ),
+    observed_sharpe=st.floats(min_value=-0.5, max_value=0.5, allow_nan=False, allow_infinity=False),
     n_obs=st.integers(min_value=50, max_value=2000),
     variance_of_trial_sharpes=st.floats(
         min_value=1e-6, max_value=0.5, allow_nan=False, allow_infinity=False
@@ -381,9 +371,7 @@ def test_dsr_non_increasing_in_n_trials(
 @_SETTINGS
 @given(
     jkm_pvalue=st.floats(min_value=0.0, max_value=1.0, allow_nan=False),
-    deflated_sharpe=st.floats(
-        min_value=0.0, max_value=1.0, allow_nan=False, allow_infinity=False
-    ),
+    deflated_sharpe=st.floats(min_value=0.0, max_value=1.0, allow_nan=False, allow_infinity=False),
     ci_low=st.floats(min_value=-5.0, max_value=5.0, allow_nan=False),
     ci_high=st.floats(min_value=-5.0, max_value=5.0, allow_nan=False),
 )

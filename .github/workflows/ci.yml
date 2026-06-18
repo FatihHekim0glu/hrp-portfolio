@@ -37,13 +37,23 @@ jobs:
         run: uv sync --all-extras --dev
 
       - name: Lint (ruff)
-        run: uv run ruff check src
+        run: uv run ruff check src tests
+
+      - name: Format check (ruff)
+        run: uv run ruff format --check src tests
 
       - name: Type-check (mypy)
-        # Non-blocking: strict mypy may have residual issues we still surface in
-        # the log without failing the whole pipeline.
-        continue-on-error: true
         run: uv run mypy src
 
       - name: Test (pytest + coverage gate)
-        run: uv run pytest -q --cov=hrp --cov-report=term --cov-fail-under=85
+        run: >-
+          uv run pytest -q
+          -m "not integration and not slow"
+          --cov=hrp --cov-report=term-missing --cov-report=xml --cov-fail-under=85
+
+      - name: Upload coverage to Codecov
+        if: matrix.python-version == '3.12'
+        uses: codecov/codecov-action@v4
+        with:
+          files: coverage.xml
+          fail_ci_if_error: false

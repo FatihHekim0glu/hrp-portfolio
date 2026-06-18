@@ -92,6 +92,7 @@ def _fetch_yfinance(tickers: list[str], start: date, end: date) -> pd.DataFrame:
     """Fetch adjusted-close prices from yfinance (lazy import). May raise."""
     import yfinance as yf
 
+    session: object | None
     try:
         # curl_cffi Chrome impersonation is used transparently when available.
         from curl_cffi import requests as _curl_requests
@@ -103,7 +104,7 @@ def _fetch_yfinance(tickers: list[str], start: date, end: date) -> pd.DataFrame:
     download_kwargs: dict[str, object] = {
         "start": start.isoformat(),
         # yfinance's ``end`` is exclusive; bump by one day to include ``end``.
-        "end": (end + pd.Timedelta(days=1)).date().isoformat(),
+        "end": (pd.Timestamp(end) + pd.Timedelta(days=1)).date().isoformat(),
         "auto_adjust": True,
         "progress": False,
         "threads": False,
@@ -132,24 +133,26 @@ def _fetch_stooq(tickers: list[str], start: date, end: date) -> pd.DataFrame:
 
 def _extract_close(raw: pd.DataFrame, tickers: list[str]) -> pd.DataFrame:
     """Normalize a provider response to a wide ``date x ticker`` close-price panel."""
+    extracted: pd.DataFrame | pd.Series
     if isinstance(raw.columns, pd.MultiIndex):
         # Prefer an adjusted/close level; providers label it "Close" (auto_adjust)
         # or "Adj Close".
         level0 = raw.columns.get_level_values(0)
         for field in ("Adj Close", "Close"):
             if field in set(level0):
-                frame = raw[field]
+                extracted = raw[field]
                 break
         else:
-            frame = raw.xs(raw.columns.levels[0][0], axis=1, level=0)
+            extracted = raw.xs(raw.columns.levels[0][0], axis=1, level=0)
     elif "Close" in raw.columns:
         # Single-ticker frame with OHLCV columns.
-        frame = raw[["Close"]].copy()
-        frame.columns = pd.Index([tickers[0]])
+        single = raw[["Close"]].copy()
+        single.columns = pd.Index([tickers[0]])
+        extracted = single
     else:
-        frame = raw
+        extracted = raw
 
-    frame = pd.DataFrame(frame).astype("float64")
+    frame = pd.DataFrame(extracted).astype("float64")
     # Keep only the requested tickers that are actually present, in request order.
     present = [t for t in tickers if t in frame.columns]
     if present:
@@ -234,7 +237,7 @@ def get_prices(
         except Exception:
             continue
         if frame is not None and not frame.empty:
-            return frame.astype("float64"), name  # type: ignore[return-value]
+            return frame.astype("float64"), name
 
     # Final fallback: deterministic synthetic panel so the library is usable
     # offline and in CI.
@@ -245,7 +248,7 @@ def compute_returns(prices: PricesLike) -> pd.DataFrame:
     r"""Convert a price panel to simple returns.
 
     NO-LOOKAHEAD REQUIREMENT: returns are computed with
-    ``prices.pct_change(fill_method=None)`` — prices are NEVER forward-filled
+    ``prices.pct_change(fill_method=None)`` - prices are NEVER forward-filled
     before differencing, because ffill-then-diff manufactures spurious zero
     returns across gaps and leaks information. The first (all-NaN) row is dropped.
 
@@ -320,9 +323,7 @@ def get_risk_free(
     return series
 
 
-def _fetch_risk_free_annual(
-    start: date, end: date, index: pd.DatetimeIndex
-) -> pd.Series:
+def _fetch_risk_free_annual(start: date, end: date, index: pd.DatetimeIndex) -> pd.Series:
     """Annualized risk-free rate aligned to ``index`` (FRED-via-CSV, synthetic fallback).
 
     Tries to load an annualized rate (e.g. the 3-month T-bill, FRED ``DGS3MO``)
@@ -341,7 +342,7 @@ def _fetch_risk_free_annual(
         annual = (raw.iloc[:, 0].astype("float64") / 100.0).reindex(index).ffill().bfill()
         if annual.isna().all():
             raise ValueError("FRED risk-free series is empty.")
-        return annual
+        return pd.Series(annual, dtype="float64")
     except Exception:
         # Flat 2% annual synthetic fallback.
         return pd.Series(0.02, index=index, dtype="float64")

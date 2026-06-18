@@ -4,15 +4,15 @@ Every fixture is deterministic (driven by :func:`hrp._rng.make_rng`) and returns
 pandas objects, so tests across the suite share identical synthetic data with
 known structure:
 
-- ``one_factor_returns`` — a single common factor plus idiosyncratic noise
+- ``one_factor_returns`` - a single common factor plus idiosyncratic noise
   (positive average correlation; a clean, well-conditioned panel).
-- ``block_correlation_cov`` — a block-structured covariance with high
+- ``block_correlation_cov`` - a block-structured covariance with high
   within-block and low cross-block correlation (the case HRP clustering targets).
-- ``pure_noise_returns`` — independent assets with no common structure (the null:
+- ``pure_noise_returns`` - independent assets with no common structure (the null:
   clustering should find nothing meaningful).
-- ``singular_cov`` — a block-perfectly-correlated, non-invertible covariance on
+- ``singular_cov`` - a block-perfectly-correlated, non-invertible covariance on
   which Markowitz CLA fails but HRP must still produce valid weights.
-- ``de_prado_example`` — a small, known correlation matrix from de Prado's worked
+- ``de_prado_example`` - a small, known correlation matrix from de Prado's worked
   example, used by the parity oracle.
 
 Importing this module has no side effects beyond fixture registration.

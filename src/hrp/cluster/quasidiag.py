@@ -28,7 +28,7 @@ def get_quasi_diag(link: np.ndarray) -> list[int]:
     (``0 <= i < N``) remain. The resulting left-to-right ordering is the
     dendrogram leaf order.
 
-    The output is a permutation of ``range(N)`` (a valid bijection — asserted in
+    The output is a permutation of ``range(N)`` (a valid bijection - asserted in
     the property suite), and reordering a covariance matrix by it yields a
     symmetric, quasi-diagonal matrix.
 
@@ -56,9 +56,7 @@ def get_quasi_diag(link: np.ndarray) -> list[int]:
     """
     link = np.asarray(link)
     if link.ndim != 2 or link.shape[1] != 4:
-        raise ValidationError(
-            f"link must be an (N-1) x 4 linkage matrix, got shape {link.shape}."
-        )
+        raise ValidationError(f"link must be an (N-1) x 4 linkage matrix, got shape {link.shape}.")
 
     n_merges = link.shape[0]
     if n_merges == 0:
@@ -73,13 +71,13 @@ def get_quasi_diag(link: np.ndarray) -> list[int]:
     # final merge, then repeatedly expand every id >= N (a merged cluster) into
     # the pair it was formed from, preserving left/right order. Cluster id
     # (N + k) corresponds to row k of `link`.
-    order = pairs[-1].tolist()  # the two children of the last (root) merge
+    order: list[int] = [int(x) for x in pairs[-1].tolist()]  # children of the root merge
 
     while max(order) >= n_leaves:
         new_order: list[int] = []
         for item in order:
             if item < n_leaves:
-                # Already an original leaf — keep it.
+                # Already an original leaf - keep it.
                 new_order.append(int(item))
             else:
                 row = item - n_leaves
@@ -92,7 +90,7 @@ def get_quasi_diag(link: np.ndarray) -> list[int]:
                 new_order.append(int(right))
         order = new_order
 
-    # The result must be a permutation of range(N) — a valid bijection.
+    # The result must be a permutation of range(N) - a valid bijection.
     if sorted(order) != list(range(n_leaves)):
         raise ValidationError(
             "link does not yield a valid leaf-order permutation of range(N); "

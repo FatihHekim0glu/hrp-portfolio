@@ -2,7 +2,7 @@
 
 The headline verdict is a PURE FUNCTION of the inference outputs
 ``(jkm_pvalue, deflated_sharpe, ci_low, ci_high)`` from a fixed enum. It cannot
-emit "HRP beats 1/N" while the bootstrap confidence interval straddles zero — the
+emit "HRP beats 1/N" while the bootstrap confidence interval straddles zero - the
 truth table is unit-tested. This is what keeps the README honest: the verdict is
 derived, not narrated.
 
@@ -32,7 +32,7 @@ class Verdict(str, Enum):
     HRP_LOSES_TO_1N = "hrp_loses_to_1n"
 
     #: The gap is not statistically distinguishable from zero (CI straddles zero
-    #: or JKM is insignificant) — the expected, literature-consistent outcome.
+    #: or JKM is insignificant) - the expected, literature-consistent outcome.
     NO_SIGNIFICANT_DIFFERENCE = "no_significant_difference"
 
 
@@ -91,9 +91,7 @@ def derive_verdict(
     if not math.isfinite(jkm_pvalue) or not 0.0 <= jkm_pvalue <= 1.0:
         raise ValidationError(f"jkm_pvalue must be in [0, 1], got {jkm_pvalue}.")
     if ci_low > ci_high:
-        raise ValidationError(
-            f"ci_low ({ci_low}) must not exceed ci_high ({ci_high})."
-        )
+        raise ValidationError(f"ci_low ({ci_low}) must not exceed ci_high ({ci_high}).")
 
     # A significant directional claim requires ALL three lines of evidence to
     # agree: a CI that does not straddle zero, a significant JKM test, and a

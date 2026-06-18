@@ -62,9 +62,7 @@ def test_ledoit_wolf_matches_sklearn_pure_noise(pure_noise_returns: pd.DataFrame
     reference = LedoitWolf(assume_centered=False).fit(x).covariance_
 
     ours = ledoit_wolf_cov(pure_noise_returns).to_numpy(dtype=np.float64)
-    np.testing.assert_allclose(
-        ours, np.asarray(reference, dtype=np.float64), rtol=0.0, atol=1e-10
-    )
+    np.testing.assert_allclose(ours, np.asarray(reference, dtype=np.float64), rtol=0.0, atol=1e-10)
 
 
 # --------------------------------------------------------------------------- #
@@ -134,15 +132,13 @@ def test_hrp_weights_match_pypfopt_block_structure(
     The ``block_correlation_cov`` fixture is a unit-variance correlation matrix,
     so it doubles as a covariance. Both allocators run on it directly with single
     linkage; a returns panel is supplied only so the public entry point can
-    recover labels — the injected ``cov`` is what is actually clustered.
+    recover labels - the injected ``cov`` is what is actually clustered.
     """
     pytest.importorskip("pypfopt.hierarchical_portfolio")
 
     cov = block_correlation_cov
     # A label-only returns frame matching the covariance's nine assets.
-    returns = pd.DataFrame(
-        np.zeros((4, cov.shape[0])), columns=list(cov.columns)
-    )
+    returns = pd.DataFrame(np.zeros((4, cov.shape[0])), columns=list(cov.columns))
 
     ours = hrp_allocate(returns, cov=cov, linkage_method="single").weights
     theirs = _pypfopt_hrp_weights(cov)

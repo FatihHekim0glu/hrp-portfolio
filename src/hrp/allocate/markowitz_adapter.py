@@ -7,7 +7,7 @@ expected-return vector, which is supplied as an ADR-documented shrunk ``mu`` (se
 
 Both follow the never-invert-Sigma discipline (Cholesky solve, not explicit
 inverse) and raise :class:`SingularCovarianceError` when the covariance cannot be
-factored — in deliberate contrast to HRP, which survives that case.
+factored - in deliberate contrast to HRP, which survives that case.
 
 cvxpy is LAZILY imported inside :func:`max_sharpe_weights` only; importing this
 module has no side effects and does not require cvxpy to be installed.
@@ -112,8 +112,7 @@ def min_var_weights(
     denom = float(ones @ z)
     if denom == 0.0 or not np.isfinite(denom):
         raise SingularCovarianceError(
-            "min_var_weights: degenerate covariance (1^T Sigma^{-1} 1 is zero "
-            "or non-finite)."
+            "min_var_weights: degenerate covariance (1^T Sigma^{-1} 1 is zero or non-finite)."
         )
     w = z / denom
 
@@ -145,8 +144,7 @@ def _min_var_long_only_qp(sigma: np.ndarray, *, name: str) -> np.ndarray:
 
     if w.value is None or problem.status not in ("optimal", "optimal_inaccurate"):
         raise SingularCovarianceError(
-            f"{name}: long-only minimum-variance QP failed to solve "
-            f"(status={problem.status})."
+            f"{name}: long-only minimum-variance QP failed to solve (status={problem.status})."
         )
     weights = np.asarray(w.value, dtype="float64").ravel()
     # Clip tiny negatives from the solver and renormalize to the simplex.
@@ -154,7 +152,7 @@ def _min_var_long_only_qp(sigma: np.ndarray, *, name: str) -> np.ndarray:
     total = weights.sum()
     if total <= 0.0 or not np.isfinite(total):
         raise SingularCovarianceError(f"{name}: QP returned a degenerate weight vector.")
-    return weights / total
+    return np.asarray(weights / total, dtype="float64")
 
 
 def max_sharpe_weights(
@@ -226,8 +224,7 @@ def max_sharpe_weights(
     mu_vec = np.asarray(mu_series.to_numpy(dtype="float64"), dtype="float64")
     if mu_vec.shape[0] != n:
         raise ValidationError(
-            f"max_sharpe_weights: mu has length {mu_vec.shape[0]} but cov is "
-            f"{n}x{n}."
+            f"max_sharpe_weights: mu has length {mu_vec.shape[0]} but cov is {n}x{n}."
         )
     if not np.all(np.isfinite(mu_vec)):
         raise ValidationError(

@@ -4,7 +4,7 @@ Only the max-Sharpe Markowitz allocator needs an expected-return vector; HRP,
 IVP, min-variance, and 1/N are mu-immune. To keep the comparison fair, max-Sharpe
 is fed an explicit James-Stein / grand-mean-shrunk mu (ADR-documented), with the
 naive sample mean exposed as an ablation so the reader can see that it is
-mu-estimation noise — not the allocator — that sinks max-Sharpe.
+mu-estimation noise - not the allocator - that sinks max-Sharpe.
 
 All estimators return a :class:`pandas.Series` of *per-period* expected returns
 labelled by asset. Importing this module has no side effects.
@@ -96,9 +96,7 @@ def james_stein_mu(returns: ReturnsLike) -> pd.Series:
     n_assets = frame.shape[1]
     if n_assets < 3:
         # The (N - 2) factor makes James-Stein shrinkage undefined below N = 3.
-        raise InsufficientDataError(
-            f"james_stein_mu requires at least 3 assets, got {n_assets}."
-        )
+        raise InsufficientDataError(f"james_stein_mu requires at least 3 assets, got {n_assets}.")
 
     columns = frame.columns
     x = frame.to_numpy(dtype=np.float64)
@@ -117,11 +115,7 @@ def james_stein_mu(returns: ReturnsLike) -> pd.Series:
     # When all sample means coincide with the grand mean (dispersion == 0), shrink
     # fully (phi = 1): the result is the grand mean, which equals the (already equal)
     # means, so no information is lost and no division by zero occurs.
-    phi = (
-        1.0
-        if dispersion <= 0.0
-        else min(1.0, ((n_assets - 2) * sigma2 / n_obs) / dispersion)
-    )
+    phi = 1.0 if dispersion <= 0.0 else min(1.0, ((n_assets - 2) * sigma2 / n_obs) / dispersion)
 
     shrunk = grand_mean + (1.0 - phi) * deviation
     return pd.Series(shrunk, index=columns, dtype="float64")

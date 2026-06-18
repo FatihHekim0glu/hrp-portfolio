@@ -1,7 +1,7 @@
 """Probabilistic and Deflated Sharpe ratios (Bailey & Lopez de Prado, 2014).
 
 These overfitting guards adjust a realized Sharpe ratio for sample length,
-non-normality (skew and kurtosis), and — for the Deflated Sharpe — the number of
+non-normality (skew and kurtosis), and - for the Deflated Sharpe - the number of
 configurations tried (multiple-testing / selection bias). The Deflated Sharpe is
 the honest yardstick that counts the FULL configuration grid as ``n_trials``.
 
@@ -78,8 +78,10 @@ def _norm_ppf(p: float) -> float:
     elif p <= p_high:
         q = p - 0.5
         r = q * q
-        x = (((((a[0] * r + a[1]) * r + a[2]) * r + a[3]) * r + a[4]) * r + a[5]) * q / (
-            ((((b[0] * r + b[1]) * r + b[2]) * r + b[3]) * r + b[4]) * r + 1.0
+        x = (
+            (((((a[0] * r + a[1]) * r + a[2]) * r + a[3]) * r + a[4]) * r + a[5])
+            * q
+            / (((((b[0] * r + b[1]) * r + b[2]) * r + b[3]) * r + b[4]) * r + 1.0)
         )
     else:
         q = math.sqrt(-2.0 * math.log(1.0 - p))

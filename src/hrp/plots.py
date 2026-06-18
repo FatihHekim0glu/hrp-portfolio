@@ -1,8 +1,8 @@
 """Plotly figure builders.
 
-Each builder returns a plain ``dict`` shaped ``{"data": [...], "layout": {...}}``
-— the same JSON shape the FastAPI layer serializes and the Next.js ``PlotlyChart``
-component renders — so the figures cross the API boundary with no Plotly object
+Each builder returns a plain ``dict`` shaped ``{"data": [...], "layout": {...}}``,
+the same JSON shape the FastAPI layer serializes and the Next.js ``PlotlyChart``
+component renders, so the figures cross the API boundary with no Plotly object
 leaking through. Plotly is an OPTIONAL dependency (the ``viz`` extra) and is
 imported lazily inside each builder; importing this module has no side effects and
 does not require Plotly.
@@ -12,7 +12,7 @@ Importing this module has no side effects.
 
 from __future__ import annotations
 
-from typing import Any
+from typing import Any, cast
 
 import numpy as np
 import pandas as pd
@@ -35,7 +35,7 @@ def _as_plain_dict(obj: Any) -> dict[str, Any]:
     leaking through.
     """
     raw = obj.to_plotly_json() if hasattr(obj, "to_plotly_json") else dict(obj)
-    return _jsonify(raw)
+    return cast("dict[str, Any]", _jsonify(raw))
 
 
 def _jsonify(value: Any) -> Any:
@@ -200,11 +200,10 @@ def oos_equity_figure(
     FigureDict
         A ``{"data", "layout"}`` line-chart mapping.
     """
-    frame = equity_curves if isinstance(equity_curves, pd.DataFrame) else pd.DataFrame(equity_curves)
-    x_axis = [
-        v.isoformat() if hasattr(v, "isoformat") else str(v)
-        for v in frame.index
-    ]
+    frame = (
+        equity_curves if isinstance(equity_curves, pd.DataFrame) else pd.DataFrame(equity_curves)
+    )
+    x_axis = [v.isoformat() if hasattr(v, "isoformat") else str(v) for v in frame.index]
     data = [
         {
             "type": "scatter",

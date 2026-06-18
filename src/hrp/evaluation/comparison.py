@@ -1,6 +1,6 @@
 """Sharpe-difference inference: Jobson-Korkie-Memmel + stationary block bootstrap.
 
-The headline question — does HRP's OOS Sharpe beat 1/N's? — is answered with two
+The headline question - does HRP's OOS Sharpe beat 1/N's? - is answered with two
 complementary tools: the Jobson-Korkie (1981) test with Memmel's (2003) correction
 for the asymptotic standard error of the Sharpe difference, and a Politis-Romano
 (1994) stationary block bootstrap that gives a confidence interval on the gap
@@ -196,8 +196,8 @@ def block_bootstrap_sharpe_gap(
     r"""Stationary block-bootstrap confidence interval on the Sharpe gap.
 
     Resamples the two return series JOINTLY (preserving their contemporaneous
-    dependence) using the Politis-Romano (1994) stationary bootstrap — blocks of
-    geometrically-distributed random length — and computes the Sharpe gap on each
+    dependence) using the Politis-Romano (1994) stationary bootstrap - blocks of
+    geometrically-distributed random length - and computes the Sharpe gap on each
     resample to build a percentile confidence interval.
 
     REPRODUCIBILITY: resampling draws from a seeded PCG64 generator
@@ -248,10 +248,7 @@ def block_bootstrap_sharpe_gap(
 
     # Politis-Romano (1994) stationary bootstrap: geometric block lengths with
     # mean ``block_size``; data-driven default of T**(1/3) when unset.
-    if block_size is None:
-        eff_block = max(1, int(round(t ** (1.0 / 3.0))))
-    else:
-        eff_block = max(1, int(block_size))
+    eff_block = max(1, round(t ** (1.0 / 3.0))) if block_size is None else max(1, int(block_size))
     # Per-step restart probability of the geometric block scheme.
     p_restart = 1.0 / eff_block
 
@@ -266,8 +263,8 @@ def block_bootstrap_sharpe_gap(
         idx = np.empty(t, dtype=np.intp)
         pos = int(rng.integers(0, t))
         idx[0] = pos
-        restarts = rng.random(t)
-        steps = rng.integers(0, t, size=t)
+        restarts = np.asarray(rng.random(t), dtype="float64")
+        steps = np.asarray(rng.integers(0, t, size=t), dtype=np.intp)
         for i in range(1, t):
             if restarts[i] < p_restart:
                 pos = int(steps[i])

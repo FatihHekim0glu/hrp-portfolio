@@ -2,14 +2,14 @@
 
 Covers:
 
-- ``hrp.data`` — forced synthetic-GBM fallback for :func:`get_prices` (no
+- ``hrp.data`` - forced synthetic-GBM fallback for :func:`get_prices` (no
   network; the ``data`` extra is absent so the lazy fetchers raise and we land on
   the deterministic synthetic panel), :func:`compute_returns`
   (``pct_change(fill_method=None)`` + leading-row drop + NaN-gap handling), and
   :func:`get_risk_free` (synthetic 2% annual fallback, deannualized).
-- ``hrp._validation`` — error paths and inner alignment.
-- ``hrp._rng`` — seeded determinism and substream independence.
-- ``hrp._manifest`` — config-hash determinism and ``to_dict`` round-trips.
+- ``hrp._validation`` - error paths and inner alignment.
+- ``hrp._rng`` - seeded determinism and substream independence.
+- ``hrp._manifest`` - config-hash determinism and ``to_dict`` round-trips.
 
 All inputs are synthetic/seeded; nothing touches the network.
 """
@@ -37,8 +37,27 @@ from hrp.data import compute_returns, get_prices, get_risk_free
 pytestmark = pytest.mark.unit
 
 
+@pytest.fixture(autouse=True)
+def _block_live_fetchers(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Force the synthetic data path for every test in this module.
+
+    These are offline unit tests. The live extras (yfinance / stooq) may be
+    installed and able to reach the network, and some test tickers ("AAA") happen
+    to resolve to real symbols, which would otherwise make the synthetic-path
+    assertions flaky. Stubbing the fetchers to raise guarantees the deterministic
+    synthetic panel is used and that nothing touches the network.
+    """
+
+    def _boom(*_args: object, **_kwargs: object) -> pd.DataFrame:
+        raise RuntimeError("network access attempted")
+
+    monkeypatch.setattr(hrp_data, "_fetch_polygon", _boom)
+    monkeypatch.setattr(hrp_data, "_fetch_yfinance", _boom)
+    monkeypatch.setattr(hrp_data, "_fetch_stooq", _boom)
+
+
 # --------------------------------------------------------------------------- #
-# hrp.data: get_prices — forced synthetic fallback                            #
+# hrp.data: get_prices - forced synthetic fallback                            #
 # --------------------------------------------------------------------------- #
 
 
@@ -89,9 +108,7 @@ def test_get_prices_synthetic_anchored_first_row() -> None:
 
 def test_get_prices_explicit_source_pref_still_falls_back() -> None:
     """A single-source preference whose fetcher raises also lands on synthetic."""
-    frame, source = get_prices(
-        ["AAA"], date(2021, 1, 1), date(2021, 2, 1), source_pref="stooq"
-    )
+    frame, source = get_prices(["AAA"], date(2021, 1, 1), date(2021, 2, 1), source_pref="stooq")
     assert source == "synthetic"
     assert list(frame.columns) == ["AAA"]
 
@@ -200,7 +217,7 @@ def test_get_risk_free_synthetic_flat_2pct() -> None:
     expected = (1.02) ** (1.0 / 252.0) - 1.0
     np.testing.assert_allclose(rf.to_numpy(), expected)
     # All entries identical (flat synthetic rate).
-    assert rf.nunique() == 1
+    assert (rf == rf.iloc[0]).all()
     # Tiny positive daily rate.
     assert 0.0 < rf.iloc[0] < 1e-3
 
@@ -222,9 +239,15 @@ def test_get_risk_free_rejects_end_not_after_start() -> None:
 
 
 def test_get_risk_free_aligned_to_returns_index() -> None:
-    """The rf series shares the business-day grid used by the synthetic prices."""
+    """The rf series shares the business-day grid used by the synthetic prices.
+
+    The module-level ``_block_live_fetchers`` fixture forces the synthetic panel,
+    so both the prices and the risk-free series are built on the same business-day
+    grid and their indexes must match exactly.
+    """
     start, end = date(2021, 1, 1), date(2021, 3, 1)
-    prices, _ = get_prices(["AAA"], start, end)
+    prices, source = get_prices(["AAA"], start, end)
+    assert source == "synthetic"
     rf = get_risk_free(start, end)
     pd.testing.assert_index_equal(rf.index, prices.index)
 
