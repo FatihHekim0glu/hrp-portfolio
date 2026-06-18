@@ -16,7 +16,7 @@ Importing this module has no side effects.
 from __future__ import annotations
 
 from dataclasses import asdict, dataclass, field
-from typing import Any
+from typing import Any, SupportsInt, cast
 
 import numpy as np
 import pandas as pd
@@ -98,22 +98,16 @@ def get_cluster_var(cov: MatrixLike, cluster_items: list[int]) -> float:
     ValidationError
         If ``cluster_items`` is empty or indexes outside ``cov``.
     """
-    cov_arr = np.asarray(
-        cov.to_numpy() if isinstance(cov, pd.DataFrame) else cov, dtype="float64"
-    )
+    cov_arr = np.asarray(cov.to_numpy() if isinstance(cov, pd.DataFrame) else cov, dtype="float64")
     if cov_arr.ndim != 2 or cov_arr.shape[0] != cov_arr.shape[1]:
-        raise ValidationError(
-            f"get_cluster_var: cov must be square, got shape {cov_arr.shape}."
-        )
+        raise ValidationError(f"get_cluster_var: cov must be square, got shape {cov_arr.shape}.")
     n = cov_arr.shape[0]
 
     items = list(cluster_items)
     if len(items) == 0:
         raise ValidationError("get_cluster_var: cluster_items must be non-empty.")
     if any((not (0 <= i < n)) for i in items):
-        raise ValidationError(
-            f"get_cluster_var: cluster_items index outside cov of size {n}."
-        )
+        raise ValidationError(f"get_cluster_var: cluster_items index outside cov of size {n}.")
 
     # Slice to the cluster's sub-covariance (positional indexing).
     sub = cov_arr[np.ix_(items, items)]
@@ -122,9 +116,7 @@ def get_cluster_var(cov: MatrixLike, cluster_items: list[int]) -> float:
     # quantcore-candidate: local inverse-variance portfolio (mirrors ivp_weights).
     diag = np.diag(sub).astype("float64")
     if np.any(diag <= 0.0) or not np.all(np.isfinite(diag)):
-        raise ValidationError(
-            "get_cluster_var: sub-covariance has a non-positive diagonal entry."
-        )
+        raise ValidationError("get_cluster_var: sub-covariance has a non-positive diagonal entry.")
     inv_var = 1.0 / diag
     weights = inv_var / inv_var.sum()
 
@@ -168,20 +160,15 @@ def get_rec_bipart(cov: MatrixLike, sort_ix: list[int]) -> pd.Series:
     ValidationError
         If ``sort_ix`` is not a valid permutation of ``cov``'s indices.
     """
-    cov_arr = np.asarray(
-        cov.to_numpy() if isinstance(cov, pd.DataFrame) else cov, dtype="float64"
-    )
+    cov_arr = np.asarray(cov.to_numpy() if isinstance(cov, pd.DataFrame) else cov, dtype="float64")
     if cov_arr.ndim != 2 or cov_arr.shape[0] != cov_arr.shape[1]:
-        raise ValidationError(
-            f"get_rec_bipart: cov must be square, got shape {cov_arr.shape}."
-        )
+        raise ValidationError(f"get_rec_bipart: cov must be square, got shape {cov_arr.shape}.")
     n = cov_arr.shape[0]
 
     order = [int(i) for i in sort_ix]
     if sorted(order) != list(range(n)):
         raise ValidationError(
-            "get_rec_bipart: sort_ix must be a permutation of cov's indices "
-            f"(0 .. {n - 1})."
+            f"get_rec_bipart: sort_ix must be a permutation of cov's indices (0 .. {n - 1})."
         )
 
     # de Prado's getRecBipart: start with unit weight everywhere, repeatedly
@@ -275,10 +262,9 @@ def hrp_allocate(
     else:
         cov_arr = np.asarray(cov, dtype="float64")
         if cov_arr.ndim != 2 or cov_arr.shape[0] != cov_arr.shape[1]:
-            raise ValidationError(
-                f"hrp_allocate: cov must be square, got shape {cov_arr.shape}."
-            )
+            raise ValidationError(f"hrp_allocate: cov must be square, got shape {cov_arr.shape}.")
         # Recover labels from the returns columns when cov is unlabelled.
+        labels: list[Any]
         if isinstance(returns, pd.DataFrame) and len(returns.columns) == cov_arr.shape[0]:
             labels = list(returns.columns)
         else:
@@ -287,11 +273,9 @@ def hrp_allocate(
 
     n_rows, n_cols = cov_df.shape
     if n_rows != n_cols:
-        raise ValidationError(
-            f"hrp_allocate: cov must be square, got shape {(n_rows, n_cols)}."
-        )
+        raise ValidationError(f"hrp_allocate: cov must be square, got shape {(n_rows, n_cols)}.")
 
-    assets = list(cov_df.columns)
+    assets: list[Any] = list(cov_df.columns)
 
     # --- Stage 1: covariance -> correlation -> two-step distance ----------
     std = np.sqrt(np.diag(cov_df.to_numpy(dtype="float64")))
@@ -317,8 +301,11 @@ def hrp_allocate(
     # Weights are keyed by positional index into cov; map back to labels and
     # restore the original input asset order.
     pos_weights = get_rec_bipart(cov_df, sort_ix)
+    # ``pos_weights`` is keyed by integer position into ``cov_df`` (built that way
+    # in ``get_rec_bipart``); pandas types the index labels as ``Hashable``.
     label_weights = pd.Series(
-        {assets[pos]: float(w) for pos, w in pos_weights.items()}, dtype="float64"
+        {assets[int(cast(SupportsInt, pos))]: float(w) for pos, w in pos_weights.items()},
+        dtype="float64",
     )
     weights = label_weights.reindex(assets)
 

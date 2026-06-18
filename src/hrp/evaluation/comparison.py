@@ -248,10 +248,7 @@ def block_bootstrap_sharpe_gap(
 
     # Politis-Romano (1994) stationary bootstrap: geometric block lengths with
     # mean ``block_size``; data-driven default of T**(1/3) when unset.
-    if block_size is None:
-        eff_block = max(1, int(round(t ** (1.0 / 3.0))))
-    else:
-        eff_block = max(1, int(block_size))
+    eff_block = max(1, round(t ** (1.0 / 3.0))) if block_size is None else max(1, int(block_size))
     # Per-step restart probability of the geometric block scheme.
     p_restart = 1.0 / eff_block
 
@@ -266,8 +263,8 @@ def block_bootstrap_sharpe_gap(
         idx = np.empty(t, dtype=np.intp)
         pos = int(rng.integers(0, t))
         idx[0] = pos
-        restarts = rng.random(t)
-        steps = rng.integers(0, t, size=t)
+        restarts = np.asarray(rng.random(t), dtype="float64")
+        steps = np.asarray(rng.integers(0, t, size=t), dtype=np.intp)
         for i in range(1, t):
             if restarts[i] < p_restart:
                 pos = int(steps[i])

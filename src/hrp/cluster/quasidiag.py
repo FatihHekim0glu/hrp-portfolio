@@ -56,9 +56,7 @@ def get_quasi_diag(link: np.ndarray) -> list[int]:
     """
     link = np.asarray(link)
     if link.ndim != 2 or link.shape[1] != 4:
-        raise ValidationError(
-            f"link must be an (N-1) x 4 linkage matrix, got shape {link.shape}."
-        )
+        raise ValidationError(f"link must be an (N-1) x 4 linkage matrix, got shape {link.shape}.")
 
     n_merges = link.shape[0]
     if n_merges == 0:
@@ -73,7 +71,7 @@ def get_quasi_diag(link: np.ndarray) -> list[int]:
     # final merge, then repeatedly expand every id >= N (a merged cluster) into
     # the pair it was formed from, preserving left/right order. Cluster id
     # (N + k) corresponds to row k of `link`.
-    order = pairs[-1].tolist()  # the two children of the last (root) merge
+    order: list[int] = [int(x) for x in pairs[-1].tolist()]  # children of the root merge
 
     while max(order) >= n_leaves:
         new_order: list[int] = []

@@ -10,7 +10,7 @@ Importing this module has no side effects.
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any, cast
 
 import numpy as np
 import pandas as pd
@@ -113,7 +113,9 @@ def ensure_dataframe(
             raise ValidationError(f"{name} must be 2-dimensional, got ndim={data.ndim}.")
         frame = pd.DataFrame(data, columns=list(columns) if columns is not None else None)
     else:
-        frame = pd.DataFrame(data)
+        # ``data`` here is any mapping/sequence the caller passes (documented),
+        # which the pandas-stubs ``DataFrame`` overloads do not model as ``object``.
+        frame = pd.DataFrame(cast(Any, data))
 
     if frame.ndim != 2:
         raise ValidationError(f"{name} must be 2-dimensional.")
