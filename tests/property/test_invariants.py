@@ -9,7 +9,7 @@ space, not just on hand-picked examples:
   leaves the HRP weights unchanged (correlation, distance, linkage, and the
   inverse-variance *ratios* are all invariant to a global variance rescale).
 - **HRP permutation-equivariance.** Permuting the asset order permutes the
-  weights identically — HRP carries no positional bias.
+  weights identically - HRP carries no positional bias.
 - **Quasi-diagonalisation is a bijection.** ``get_quasi_diag`` returns a valid
   permutation of ``range(N)``.
 - **Estimator-level no-lookahead.** HRP weights computed on an in-sample window

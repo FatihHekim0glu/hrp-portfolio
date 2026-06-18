@@ -132,7 +132,7 @@ def test_hrp_weights_match_pypfopt_block_structure(
     The ``block_correlation_cov`` fixture is a unit-variance correlation matrix,
     so it doubles as a covariance. Both allocators run on it directly with single
     linkage; a returns panel is supplied only so the public entry point can
-    recover labels — the injected ``cov`` is what is actually clustered.
+    recover labels - the injected ``cov`` is what is actually clustered.
     """
     pytest.importorskip("pypfopt.hierarchical_portfolio")
 

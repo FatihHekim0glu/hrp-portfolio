@@ -2,14 +2,14 @@
 
 Covers:
 
-- ``hrp.data`` — forced synthetic-GBM fallback for :func:`get_prices` (no
+- ``hrp.data`` - forced synthetic-GBM fallback for :func:`get_prices` (no
   network; the ``data`` extra is absent so the lazy fetchers raise and we land on
   the deterministic synthetic panel), :func:`compute_returns`
   (``pct_change(fill_method=None)`` + leading-row drop + NaN-gap handling), and
   :func:`get_risk_free` (synthetic 2% annual fallback, deannualized).
-- ``hrp._validation`` — error paths and inner alignment.
-- ``hrp._rng`` — seeded determinism and substream independence.
-- ``hrp._manifest`` — config-hash determinism and ``to_dict`` round-trips.
+- ``hrp._validation`` - error paths and inner alignment.
+- ``hrp._rng`` - seeded determinism and substream independence.
+- ``hrp._manifest`` - config-hash determinism and ``to_dict`` round-trips.
 
 All inputs are synthetic/seeded; nothing touches the network.
 """
@@ -57,7 +57,7 @@ def _block_live_fetchers(monkeypatch: pytest.MonkeyPatch) -> None:
 
 
 # --------------------------------------------------------------------------- #
-# hrp.data: get_prices — forced synthetic fallback                            #
+# hrp.data: get_prices - forced synthetic fallback                            #
 # --------------------------------------------------------------------------- #
 
 

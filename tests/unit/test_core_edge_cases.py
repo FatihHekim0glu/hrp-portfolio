@@ -7,17 +7,17 @@ inputs. No network, no heavy machinery beyond the shared seeded fixtures.
 
 Coverage targets (the "Missing" lines from the report):
 
-- ``allocate/hrp.py`` — two-asset and single-asset degenerate cases,
+- ``allocate/hrp.py`` - two-asset and single-asset degenerate cases,
   ``get_cluster_var`` inverse-variance weighting (and its rejections), the
   ``get_rec_bipart`` split, ndarray-cov label-recovery branches, and
   ``HRPResult.to_dict``.
-- ``allocate/ivp.py`` + ``allocate/naive.py`` — exact expected weights on a
+- ``allocate/ivp.py`` + ``allocate/naive.py`` - exact expected weights on a
   known covariance, plus the validation rejections.
-- ``cluster/quasidiag.py`` + ``linkage.py`` + ``distance.py`` — non-``single``
+- ``cluster/quasidiag.py`` + ``linkage.py`` + ``distance.py`` - non-``single``
   linkage methods, distance edge values, and the malformed-input branches.
-- ``backtest/walk_forward.py`` — a short deterministic run: ``shift(1)``
+- ``backtest/walk_forward.py`` - a short deterministic run: ``shift(1)``
   boundary, purge/embargo, cost application, cost monotonicity, anchored window.
-- ``evaluation`` comparison/dsr/verdict — JKM on identical series (~0 gap, p=1),
+- ``evaluation`` comparison/dsr/verdict - JKM on identical series (~0 gap, p=1),
   DSR edge ``n_trials=1`` (reduces to plain PSR), and every ``Verdict`` branch
   of :func:`derive_verdict`.
 """
@@ -55,7 +55,7 @@ from hrp.evaluation.dsr import (
 from hrp.evaluation.verdict import Verdict, derive_verdict
 
 # --------------------------------------------------------------------------- #
-# get_cluster_var — inverse-variance weighting (the HONESTY requirement)
+# get_cluster_var - inverse-variance weighting (the HONESTY requirement)
 # --------------------------------------------------------------------------- #
 
 
@@ -66,7 +66,7 @@ def test_get_cluster_var_is_inverse_variance_not_equal_weight() -> None:
     For ``cov = diag([1, 4])`` the inverse variances are ``[1, 0.25]``,
     normalized to ``[0.8, 0.2]``. The cluster variance is
     ``0.8**2 * 1 + 0.2**2 * 4 = 0.64 + 0.16 = 0.80``. Equal weights would give
-    ``0.5**2 * 1 + 0.5**2 * 4 = 1.25`` — pinning the inverse-variance behaviour.
+    ``0.5**2 * 1 + 0.5**2 * 4 = 1.25`` - pinning the inverse-variance behaviour.
     """
     cov = np.diag([1.0, 4.0])
     var = get_cluster_var(cov, [0, 1])
@@ -120,7 +120,7 @@ def test_get_cluster_var_rejects_non_square() -> None:
 
 
 # --------------------------------------------------------------------------- #
-# get_rec_bipart — the recursive-bisection split
+# get_rec_bipart - the recursive-bisection split
 # --------------------------------------------------------------------------- #
 
 
@@ -130,7 +130,7 @@ def test_get_rec_bipart_two_assets_split() -> None:
 
     For ``cov = diag([1, 4])`` and order ``[0, 1]``, the left half is ``[0]``
     (var 1) and the right half ``[1]`` (var 4), so
-    ``alpha = 1 - 1/(1+4) = 0.8`` and weights are ``[0.8, 0.2]`` — more capital
+    ``alpha = 1 - 1/(1+4) = 0.8`` and weights are ``[0.8, 0.2]`` - more capital
     to the lower-variance asset.
     """
     cov = np.diag([1.0, 4.0])
@@ -173,7 +173,7 @@ def test_get_rec_bipart_rejects_bad_permutation_and_shape() -> None:
 
 
 # --------------------------------------------------------------------------- #
-# hrp_allocate — degenerate small universes and ndarray-cov label recovery
+# hrp_allocate - degenerate small universes and ndarray-cov label recovery
 # --------------------------------------------------------------------------- #
 
 
@@ -257,7 +257,7 @@ def test_hrp_result_to_dict_is_json_friendly() -> None:
 
 
 # --------------------------------------------------------------------------- #
-# ivp_weights / naive_weights — exact weights on a known covariance
+# ivp_weights / naive_weights - exact weights on a known covariance
 # --------------------------------------------------------------------------- #
 
 
@@ -320,7 +320,7 @@ def test_naive_weights_rejects_empty_and_duplicates(assets: list[str]) -> None:
 
 
 # --------------------------------------------------------------------------- #
-# distance kernels — edge values and validation branches
+# distance kernels - edge values and validation branches
 # --------------------------------------------------------------------------- #
 
 
@@ -384,7 +384,7 @@ def test_euclidean_codistance_rejects_non_square() -> None:
 
 
 # --------------------------------------------------------------------------- #
-# linkage_matrix — non-'single' methods + validation branches
+# linkage_matrix - non-'single' methods + validation branches
 # --------------------------------------------------------------------------- #
 
 
@@ -432,7 +432,7 @@ def test_linkage_matrix_rejects_malformed_distance(dist: pd.DataFrame) -> None:
 
 
 # --------------------------------------------------------------------------- #
-# get_quasi_diag — leaf-order recovery + malformed-input branches
+# get_quasi_diag - leaf-order recovery + malformed-input branches
 # --------------------------------------------------------------------------- #
 
 
@@ -480,7 +480,7 @@ def test_get_quasi_diag_rejects_dangling_cluster_reference() -> None:
 
 
 # --------------------------------------------------------------------------- #
-# walk_forward_backtest — deterministic short run
+# walk_forward_backtest - deterministic short run
 # --------------------------------------------------------------------------- #
 
 
@@ -644,7 +644,7 @@ def test_walk_forward_too_short_panel_raises() -> None:
 
 
 # --------------------------------------------------------------------------- #
-# jobson_korkie_memmel — identical series => ~zero gap, p-value 1.0
+# jobson_korkie_memmel - identical series => ~zero gap, p-value 1.0
 # --------------------------------------------------------------------------- #
 
 
@@ -744,7 +744,7 @@ def test_block_bootstrap_rejects_bad_params(kwargs: dict) -> None:
 
 
 # --------------------------------------------------------------------------- #
-# deflated_sharpe_ratio — edge n_trials=1 reduces to plain PSR
+# deflated_sharpe_ratio - edge n_trials=1 reduces to plain PSR
 # --------------------------------------------------------------------------- #
 
 
@@ -825,7 +825,7 @@ def test_dsr_extreme_tails_exercise_norm_ppf_branches() -> None:
 
 
 # --------------------------------------------------------------------------- #
-# derive_verdict — every enum branch reached
+# derive_verdict - every enum branch reached
 # --------------------------------------------------------------------------- #
 
 

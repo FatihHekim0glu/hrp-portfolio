@@ -2,13 +2,13 @@
 
 Three locked behaviours:
 
-* SINGULAR ROBUSTNESS — the ``singular_cov`` fixture (block-perfectly-correlated,
+* SINGULAR ROBUSTNESS - the ``singular_cov`` fixture (block-perfectly-correlated,
   rank-deficient) still yields *valid simplex* HRP weights with no exception.
   This is de Prado's headline robustness claim (Markowitz CLA cannot invert this
   matrix; HRP never inverts the full covariance).
-* DETERMINISM — identical inputs and the same seed produce byte-identical
+* DETERMINISM - identical inputs and the same seed produce byte-identical
   weights and bootstrap CIs.
-* PINNED HORSE-RACE SNAPSHOT — on a deterministic synthetic panel, HRP's
+* PINNED HORSE-RACE SNAPSHOT - on a deterministic synthetic panel, HRP's
   out-of-sample variance is ``<=`` minimum-variance's OOS variance, while the
   HRP-vs-1/N Sharpe-gap bootstrap CI straddles zero (the honest null is locked,
   not papered over).
@@ -57,8 +57,8 @@ def _synthetic_block_panel(
     Twelve assets in three correlated blocks share a global factor plus a
     per-block factor and idiosyncratic noise. With a SHORT lookback and the
     deliberately fragile SAMPLE covariance, minimum-variance over-fits estimation
-    error (its OOS variance balloons) while HRP — which never inverts the full
-    covariance — stays well-conditioned. This is the regime in which de Prado's
+    error (its OOS variance balloons) while HRP - which never inverts the full
+    covariance - stays well-conditioned. This is the regime in which de Prado's
     OOS-variance advantage is real, so the snapshot is honest rather than rigged.
     """
     gen = make_rng(seed)
@@ -85,13 +85,13 @@ def _min_var_allocator(window: pd.DataFrame) -> pd.Series:
     """Unconstrained minimum-variance on the same sample covariance.
 
     ``long_only=False`` exposes the closed-form solution, which over-fits the
-    noisy sample covariance — exactly the failure HRP is meant to avoid.
+    noisy sample covariance - exactly the failure HRP is meant to avoid.
     """
     return min_var_weights(sample_cov(window), long_only=False)
 
 
 def _naive_allocator(window: pd.DataFrame) -> pd.Series:
-    """1/N equal-weight — the estimation-error-free yardstick."""
+    """1/N equal-weight - the estimation-error-free yardstick."""
     return naive_weights(list(window.columns))
 
 
@@ -115,15 +115,15 @@ def horse_race_returns() -> dict[str, pd.Series]:
 
 
 # --------------------------------------------------------------------------- #
-# SINGULAR ROBUSTNESS — HRP must survive a non-invertible covariance           #
+# SINGULAR ROBUSTNESS - HRP must survive a non-invertible covariance           #
 # --------------------------------------------------------------------------- #
 def test_hrp_survives_singular_covariance(singular_cov: pd.DataFrame) -> None:
     """HRP yields valid simplex weights on a rank-deficient covariance.
 
     The ``singular_cov`` fixture is block-perfectly-correlated (rank 2 < 6), so
-    Markowitz CLA cannot invert it. HRP must return a clean allocation — no
+    Markowitz CLA cannot invert it. HRP must return a clean allocation - no
     exception, weights non-negative and summing to one over exactly the input
-    assets — which is the paper's robustness headline.
+    assets - which is the paper's robustness headline.
     """
     # Sanity: the fixture really is rank-deficient (otherwise the test is vacuous).
     assert np.linalg.matrix_rank(singular_cov.to_numpy(dtype=np.float64)) < singular_cov.shape[0]
@@ -146,7 +146,7 @@ def test_hrp_survives_singular_covariance(singular_cov: pd.DataFrame) -> None:
 def test_min_var_fails_where_hrp_survives(singular_cov: pd.DataFrame) -> None:
     """The contrast: Markowitz min-variance cannot factor the singular covariance.
 
-    Pins the asymmetry that motivates HRP — same input, one allocator raises,
+    Pins the asymmetry that motivates HRP - same input, one allocator raises,
     the other allocates. Guards against a future change that silently "repairs"
     the singular matrix and erases the comparison.
     """
@@ -157,7 +157,7 @@ def test_min_var_fails_where_hrp_survives(singular_cov: pd.DataFrame) -> None:
 
 
 # --------------------------------------------------------------------------- #
-# DETERMINISM — same seed / same inputs -> identical outputs                   #
+# DETERMINISM - same seed / same inputs -> identical outputs                   #
 # --------------------------------------------------------------------------- #
 def test_hrp_weights_are_deterministic(one_factor_returns: pd.DataFrame) -> None:
     """Two HRP runs on identical inputs produce byte-identical weights."""
@@ -190,7 +190,7 @@ def test_bootstrap_ci_seed_changes_result(horse_race_returns: dict[str, pd.Serie
 
 
 # --------------------------------------------------------------------------- #
-# PINNED HORSE-RACE SNAPSHOT — HRP OOS variance <= min-var; null CI straddles 0 #
+# PINNED HORSE-RACE SNAPSHOT - HRP OOS variance <= min-var; null CI straddles 0 #
 # --------------------------------------------------------------------------- #
 def test_hrp_oos_variance_beats_min_variance(horse_race_returns: dict[str, pd.Series]) -> None:
     """HRP's OOS variance is at most minimum-variance's (de Prado's claim).
@@ -215,7 +215,7 @@ def test_hrp_oos_variance_beats_min_variance(horse_race_returns: dict[str, pd.Se
 def test_hrp_vs_naive_sharpe_gap_ci_straddles_zero(
     horse_race_returns: dict[str, pd.Series],
 ) -> None:
-    """The HRP-vs-1/N Sharpe-gap 95% CI straddles zero — honest null, locked.
+    """The HRP-vs-1/N Sharpe-gap 95% CI straddles zero - honest null, locked.
 
     HRP need not beat the brutal 1/N benchmark on Sharpe; pretending otherwise
     would be the dishonest result this suite exists to prevent. The pinned

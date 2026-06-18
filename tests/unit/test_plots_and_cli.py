@@ -2,13 +2,13 @@
 
 Covers:
 
-- ``hrp.plots`` — each of the five figure builders (dendrogram, quasi-diagonal
+- ``hrp.plots`` - each of the five figure builders (dendrogram, quasi-diagonal
   heatmap before/after, weights, OOS equity, Sharpe-gap bootstrap). Every builder
   must return a plain ``{"data", "layout"}`` mapping whose contents are
   JSON-serializable (no numpy/pandas/Plotly object leaks across the API boundary),
   and we assert real numerical structure (heatmap diagonal, weight values,
   CI-marker positions, trace types) rather than merely "it runs".
-- ``hrp.cli`` — the ``demo`` command, invoked via ``typer.testing.CliRunner``,
+- ``hrp.cli`` - the ``demo`` command, invoked via ``typer.testing.CliRunner``,
   runs the full synthetic horse-race pipeline offline and exits ``0``.
 
 All inputs are synthetic/seeded; nothing touches the network. The dendrogram input
