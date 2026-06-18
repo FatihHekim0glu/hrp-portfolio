@@ -184,6 +184,15 @@ module = [
 ]
 ignore_missing_imports = true
 
+# cvxpy ships no type stubs, so under strict mode its symbols (quad_form,
+# psd_wrap, sum) read as missing attributes and Problem.solve() as an untyped
+# call. Skipping its imports treats the module as untyped at the boundary and
+# allows the optimizer calls, keeping our own signatures strictly typed.
+[[tool.mypy.overrides]]
+module = ["cvxpy.*"]
+follow_imports = "skip"
+disallow_untyped_calls = false
+
 # --------------------------------------------------------------------------- #
 # pytest                                                                       #
 # --------------------------------------------------------------------------- #

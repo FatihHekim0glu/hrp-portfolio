@@ -92,6 +92,7 @@ def _fetch_yfinance(tickers: list[str], start: date, end: date) -> pd.DataFrame:
     """Fetch adjusted-close prices from yfinance (lazy import). May raise."""
     import yfinance as yf
 
+    session: object | None
     try:
         # curl_cffi Chrome impersonation is used transparently when available.
         from curl_cffi import requests as _curl_requests
