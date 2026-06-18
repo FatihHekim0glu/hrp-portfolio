@@ -191,9 +191,7 @@ def test_max_sharpe_aligns_mu_to_cov_columns() -> None:
     mu_shuffled = pd.Series([0.005, 0.03, 0.01], index=list("CAB"))
     w_ordered = max_sharpe_weights(cov, mu_ordered)
     w_shuffled = max_sharpe_weights(cov, mu_shuffled)
-    np.testing.assert_allclose(
-        w_ordered.to_numpy(), w_shuffled.to_numpy(), rtol=1e-6, atol=1e-7
-    )
+    np.testing.assert_allclose(w_ordered.to_numpy(), w_shuffled.to_numpy(), rtol=1e-6, atol=1e-7)
 
 
 @pytest.mark.unit

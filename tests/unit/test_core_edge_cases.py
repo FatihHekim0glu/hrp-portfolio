@@ -280,9 +280,7 @@ def test_ivp_weights_exact_on_known_diagonal() -> None:
 def test_ivp_weights_ignores_off_diagonal() -> None:
     """IVP uses only the diagonal: off-diagonal covariances do not change weights."""
     diag_only = pd.DataFrame(np.diag([1.0, 4.0]), index=["A", "B"], columns=["A", "B"])
-    with_offdiag = pd.DataFrame(
-        [[1.0, 0.9], [0.9, 4.0]], index=["A", "B"], columns=["A", "B"]
-    )
+    with_offdiag = pd.DataFrame([[1.0, 0.9], [0.9, 4.0]], index=["A", "B"], columns=["A", "B"])
     w0 = ivp_weights(diag_only)
     w1 = ivp_weights(with_offdiag)
     pd.testing.assert_series_equal(w0, w1)
@@ -755,9 +753,7 @@ def test_dsr_single_trial_equals_psr_against_zero() -> None:
     """With ``n_trials == 1`` the expected-max benchmark collapses to 0: DSR == PSR."""
     sr = 0.1
     psr = probabilistic_sharpe_ratio(sr, n_obs=100)
-    dsr = deflated_sharpe_ratio(
-        sr, n_obs=100, n_trials=1, variance_of_trial_sharpes=0.04
-    )
+    dsr = deflated_sharpe_ratio(sr, n_obs=100, n_trials=1, variance_of_trial_sharpes=0.04)
     assert dsr == pytest.approx(psr, abs=1e-12)
 
 
@@ -766,9 +762,7 @@ def test_dsr_zero_trial_variance_equals_psr_against_zero() -> None:
     """Zero cross-trial variance also collapses the benchmark to 0 (DSR == PSR)."""
     sr = 0.1
     psr = probabilistic_sharpe_ratio(sr, n_obs=100)
-    dsr = deflated_sharpe_ratio(
-        sr, n_obs=100, n_trials=20, variance_of_trial_sharpes=0.0
-    )
+    dsr = deflated_sharpe_ratio(sr, n_obs=100, n_trials=20, variance_of_trial_sharpes=0.0)
     assert dsr == pytest.approx(psr, abs=1e-12)
 
 
@@ -823,9 +817,7 @@ def test_dsr_extreme_tails_exercise_norm_ppf_branches() -> None:
     ``Phi^{-1}(1 - 1/(N e))``; for a very large ``N`` these probabilities land in
     the upper tail of the inverse-CDF, and the DSR remains a valid probability.
     """
-    dsr = deflated_sharpe_ratio(
-        0.3, n_obs=500, n_trials=100_000, variance_of_trial_sharpes=0.04
-    )
+    dsr = deflated_sharpe_ratio(0.3, n_obs=500, n_trials=100_000, variance_of_trial_sharpes=0.04)
     assert 0.0 <= dsr <= 1.0
     # An overwhelming multiplicity strongly deflates even a healthy Sharpe.
     plain = probabilistic_sharpe_ratio(0.3, n_obs=500)
@@ -840,18 +832,14 @@ def test_dsr_extreme_tails_exercise_norm_ppf_branches() -> None:
 @pytest.mark.unit
 def test_verdict_hrp_beats_when_all_evidence_agrees() -> None:
     """Strictly-positive CI + significant JKM + DSR above threshold => HRP beats."""
-    v = derive_verdict(
-        jkm_pvalue=0.01, deflated_sharpe=0.99, ci_low=0.10, ci_high=0.30
-    )
+    v = derive_verdict(jkm_pvalue=0.01, deflated_sharpe=0.99, ci_low=0.10, ci_high=0.30)
     assert v is Verdict.HRP_BEATS_1N
 
 
 @pytest.mark.unit
 def test_verdict_hrp_loses_when_ci_strictly_negative() -> None:
     """Strictly-negative CI + significant JKM + DSR above threshold => HRP loses."""
-    v = derive_verdict(
-        jkm_pvalue=0.01, deflated_sharpe=0.99, ci_low=-0.30, ci_high=-0.10
-    )
+    v = derive_verdict(jkm_pvalue=0.01, deflated_sharpe=0.99, ci_low=-0.30, ci_high=-0.10)
     assert v is Verdict.HRP_LOSES_TO_1N
 
 
@@ -870,9 +858,7 @@ def test_verdict_no_difference_when_any_evidence_fails(
     jkm: float, dsr: float, lo: float, hi: float, reason: str
 ) -> None:
     """A directional claim requires ALL three lines of evidence; any failure => no diff."""
-    assert (
-        derive_verdict(jkm, dsr, lo, hi) is Verdict.NO_SIGNIFICANT_DIFFERENCE
-    ), reason
+    assert derive_verdict(jkm, dsr, lo, hi) is Verdict.NO_SIGNIFICANT_DIFFERENCE, reason
 
 
 @pytest.mark.unit

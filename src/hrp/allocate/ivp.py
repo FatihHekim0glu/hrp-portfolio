@@ -47,17 +47,13 @@ def ivp_weights(cov: MatrixLike) -> pd.Series:
     frame = cov if isinstance(cov, pd.DataFrame) else pd.DataFrame(cov)
     n_rows, n_cols = frame.shape
     if n_rows != n_cols:
-        raise ValidationError(
-            f"ivp_weights: cov must be square, got shape {(n_rows, n_cols)}."
-        )
+        raise ValidationError(f"ivp_weights: cov must be square, got shape {(n_rows, n_cols)}.")
 
     variances = np.asarray(np.diag(frame.to_numpy(dtype="float64")), dtype="float64")
     if not np.all(np.isfinite(variances)):
         raise ValidationError("ivp_weights: cov diagonal contains non-finite entries.")
     if np.any(variances <= 0.0):
-        raise ValidationError(
-            "ivp_weights: cov has a non-positive diagonal (variance) entry."
-        )
+        raise ValidationError("ivp_weights: cov has a non-positive diagonal (variance) entry.")
 
     inv_var = 1.0 / variances
     weights = inv_var / inv_var.sum()

@@ -208,8 +208,7 @@ class PolygonProvider:
                 data = response.json()
                 return dict(data)
         raise RuntimeError(
-            f"PolygonProvider: HTTP {last_status} for {ticker} after "
-            f"{self.max_retries} retries."
+            f"PolygonProvider: HTTP {last_status} for {ticker} after {self.max_retries} retries."
         )
 
     def _get_json_urllib(self, url: str) -> dict[str, Any]:
@@ -231,9 +230,7 @@ class PolygonProvider:
                     time.sleep(self.backoff_base * (2**attempt))
                     continue
                 raise
-        raise RuntimeError(
-            f"PolygonProvider: HTTP {last_status} after {self.max_retries} retries."
-        )
+        raise RuntimeError(f"PolygonProvider: HTTP {last_status} after {self.max_retries} retries.")
 
     @staticmethod
     def _series_from_payload(payload: dict[str, Any], ticker: str) -> pd.Series:
@@ -245,8 +242,7 @@ class PolygonProvider:
         results = payload.get("results") or []
         if not results:
             raise ValueError(
-                f"PolygonProvider: no results for {ticker} "
-                f"(status={payload.get('status')!r})."
+                f"PolygonProvider: no results for {ticker} (status={payload.get('status')!r})."
             )
         timestamps = [pd.Timestamp(bar["t"], unit="ms").normalize() for bar in results]
         closes = [float(bar["c"]) for bar in results]

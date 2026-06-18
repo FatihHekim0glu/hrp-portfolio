@@ -162,9 +162,7 @@ def test_mp_clip_identity_correlation_is_fixed_point():
     a no-op, so the identity is a fixed point of the clip.
     """
     n_assets = 5
-    ident = pd.DataFrame(
-        np.eye(n_assets), index=_labels(n_assets), columns=_labels(n_assets)
-    )
+    ident = pd.DataFrame(np.eye(n_assets), index=_labels(n_assets), columns=_labels(n_assets))
     out = marchenko_pastur_clip(ident, n_obs=50, n_assets=n_assets)
     assert np.allclose(out.to_numpy(), np.eye(n_assets), atol=1e-10)
 
@@ -172,9 +170,7 @@ def test_mp_clip_identity_correlation_is_fixed_point():
 @pytest.mark.unit
 def test_mp_clip_preserves_variances_on_rescale():
     """Rescaling back to covariance keeps the original variances on the diagonal."""
-    cov = np.array(
-        [[4.0, 1.0, 0.5], [1.0, 9.0, 0.7], [0.5, 0.7, 16.0]], dtype=np.float64
-    )
+    cov = np.array([[4.0, 1.0, 0.5], [1.0, 9.0, 0.7], [0.5, 0.7, 16.0]], dtype=np.float64)
     out = marchenko_pastur_clip(pd.DataFrame(cov), n_obs=100, n_assets=3)
     assert np.allclose(np.diag(out.to_numpy()), np.diag(cov), atol=1e-10)
 
@@ -182,9 +178,7 @@ def test_mp_clip_preserves_variances_on_rescale():
 @pytest.mark.unit
 def test_mp_clip_infers_n_assets_from_shape():
     """When ``n_assets`` is omitted it is inferred from the matrix shape."""
-    cov = np.array(
-        [[4.0, 1.0, 0.5], [1.0, 9.0, 0.7], [0.5, 0.7, 16.0]], dtype=np.float64
-    )
+    cov = np.array([[4.0, 1.0, 0.5], [1.0, 9.0, 0.7], [0.5, 0.7, 16.0]], dtype=np.float64)
     explicit = marchenko_pastur_clip(pd.DataFrame(cov), n_obs=100, n_assets=3)
     inferred = marchenko_pastur_clip(pd.DataFrame(cov), n_obs=100)
     assert np.allclose(explicit.to_numpy(), inferred.to_numpy(), atol=1e-12)
@@ -279,9 +273,7 @@ def test_james_stein_shrinks_toward_grand_mean():
 def test_james_stein_preserves_cross_sectional_mean():
     """JS shrinkage is affine toward the grand mean, so the grand mean is fixed."""
     gen = np.random.default_rng(13)
-    df = pd.DataFrame(
-        gen.standard_normal((150, 6)) * 0.01 + 0.001, columns=_labels(6)
-    )
+    df = pd.DataFrame(gen.standard_normal((150, 6)) * 0.01 + 0.001, columns=_labels(6))
     sm = sample_mu(df)
     js = james_stein_mu(df)
     assert float(js.mean()) == pytest.approx(float(sm.mean()), abs=1e-15)

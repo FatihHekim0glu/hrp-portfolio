@@ -207,7 +207,9 @@ def test_hrp_oos_variance_beats_min_variance(horse_race_returns: dict[str, pd.Se
     assert hrp_var == pytest.approx(6.298141426394225e-05, rel=1e-6)
     assert mv_var == pytest.approx(0.00015962386605742148, rel=1e-6)
     # And the annualized-vol view (consumed by the evaluation layer) agrees.
-    assert annualized_vol(horse_race_returns["hrp"]) <= annualized_vol(horse_race_returns["min_var"])
+    assert annualized_vol(horse_race_returns["hrp"]) <= annualized_vol(
+        horse_race_returns["min_var"]
+    )
 
 
 def test_hrp_vs_naive_sharpe_gap_ci_straddles_zero(

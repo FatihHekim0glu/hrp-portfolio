@@ -57,9 +57,7 @@ def linkage_matrix(dist: MatrixLike, *, method: str = "single") -> np.ndarray:
     # HONESTY REQUIREMENT: the validated default is single linkage (de Prado
     # 2016). Reject any unrecognized method rather than silently substituting.
     if method not in VALID_METHODS:
-        raise ValidationError(
-            f"method must be one of {sorted(VALID_METHODS)}, got {method!r}."
-        )
+        raise ValidationError(f"method must be one of {sorted(VALID_METHODS)}, got {method!r}.")
 
     frame = ensure_dataframe(dist, name="dist")
     n_rows, n_cols = frame.shape

@@ -91,9 +91,7 @@ def derive_verdict(
     if not math.isfinite(jkm_pvalue) or not 0.0 <= jkm_pvalue <= 1.0:
         raise ValidationError(f"jkm_pvalue must be in [0, 1], got {jkm_pvalue}.")
     if ci_low > ci_high:
-        raise ValidationError(
-            f"ci_low ({ci_low}) must not exceed ci_high ({ci_high})."
-        )
+        raise ValidationError(f"ci_low ({ci_low}) must not exceed ci_high ({ci_high}).")
 
     # A significant directional claim requires ALL three lines of evidence to
     # agree: a CI that does not straddle zero, a significant JKM test, and a

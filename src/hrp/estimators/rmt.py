@@ -69,9 +69,7 @@ def marchenko_pastur_clip(
         labels = pd.RangeIndex(cov_arr.shape[0]) if cov_arr.ndim == 2 else pd.RangeIndex(0)
 
     if cov_arr.ndim != 2 or cov_arr.shape[0] != cov_arr.shape[1]:
-        raise ValidationError(
-            f"cov must be a square 2-D matrix, got shape {cov_arr.shape}."
-        )
+        raise ValidationError(f"cov must be a square 2-D matrix, got shape {cov_arr.shape}.")
     if int(n_obs) <= 0:
         raise ValidationError(f"n_obs must be positive, got {n_obs}.")
 
