@@ -8,8 +8,8 @@
 ## Context
 
 HRP clusters assets on a distance derived from their correlation. The choice of
-formula matters because clustering only behaves sensibly on a **proper metric**
-— one that is non-negative, zero iff the points coincide, symmetric, and obeys
+formula matters because clustering only behaves sensibly on a **proper metric**,
+one that is non-negative, zero iff the points coincide, symmetric, and obeys
 the triangle inequality.
 
 A widespread shortcut is to use `d_ij = 1 - rho_ij`. This is *not* a metric: it
@@ -33,7 +33,7 @@ D_ij = sqrt( sum_k (d_ik - d_jk)^2 )
 ```
 
 so two assets are close when they relate to the *rest of the universe* the same
-way — the quantity the linkage and quasi-diagonalization steps actually rely on.
+way, the quantity the linkage and quasi-diagonalization steps actually rely on.
 
 ## Decision
 

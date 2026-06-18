@@ -8,7 +8,7 @@
 ## Context
 
 De Prado's purge-and-embargo machinery (AFML Ch. 7) prevents leakage in
-cross-validation when **labels overlap in time** — e.g. a triple-barrier label
+cross-validation when **labels overlap in time**, e.g. a triple-barrier label
 whose outcome window spans several days, so a training observation can "see" into
 a test observation's future. Pairs-trading and other event-labeled backtests in
 the sibling repositories configure purge/embargo for *that* overlapping-label
@@ -19,7 +19,7 @@ allocation** backtest with a fundamentally simpler temporal structure:
 
 - Returns are **non-overlapping daily** observations (return horizon = 1 day).
 - Weights are estimated on an in-sample window and applied to the **subsequent**
-  OOS window via `signal.shift(1)` at the rebalance boundary — there is no
+  OOS window via `signal.shift(1)` at the rebalance boundary, so there is no
   multi-day label whose outcome leaks backward.
 
 The only leakage surface is the **single shared boundary observation** between the

@@ -3,7 +3,7 @@ message: "If you use this software, please cite it as below."
 title: "hrp-portfolio: From-scratch Hierarchical Risk Parity, benchmarked honestly out-of-sample"
 abstract: >-
   A pure, typed Python implementation of Lopez de Prado's Hierarchical Risk
-  Parity (2016) — tree clustering, quasi-diagonalization, recursive bisection —
+  Parity (2016): tree clustering, quasi-diagonalization, and recursive bisection,
   benchmarked out-of-sample against Markowitz (min-variance and max-Sharpe),
   inverse-variance (IVP), and the DeMiguel 1/N naive portfolio under realistic
   transaction costs and estimation error.

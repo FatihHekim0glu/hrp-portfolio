@@ -60,10 +60,10 @@ test.
 
 ### Foundation (`_*.py`)
 
-- `_constants.py` — `PERIODS_PER_YEAR = 252` and friends; one source of truth.
-- `_validation.py` — input guards (shape, finiteness, sufficient observations).
-- `_typing.py` / `_exceptions.py` — shared aliases and the exception taxonomy.
-- `_manifest.py` / `_rng.py` — `RunManifest` plus seeded PCG64 substreams. The
+- `_constants.py`: `PERIODS_PER_YEAR = 252` and friends; one source of truth.
+- `_validation.py`: input guards (shape, finiteness, sufficient observations).
+- `_typing.py` / `_exceptions.py`: shared aliases and the exception taxonomy.
+- `_manifest.py` / `_rng.py`: `RunManifest` plus seeded PCG64 substreams. The
   manifest makes a whole run reproducible; the same seed yields byte-identical
   weights, Sharpe gap, and bootstrap CI.
 
@@ -80,7 +80,7 @@ dataclass carries the linkage matrix and the ordered leaves between stages.
 
 The fairness layer. `covariance.py` produces the one estimator shared by every
 allocator ([ADR-0002](decisions/0002-shared-covariance-fairness.md)); `rmt.py`
-applies the optional Marchenko–Pastur clip; `mu.py` is the James–Stein
+applies the optional Marchenko-Pastur clip; `mu.py` is the James-Stein
 grand-mean-shrunk expected-returns estimator used only by max-Sharpe
 ([ADR-0003](decisions/0003-shrunk-mu.md)).
 
@@ -89,15 +89,15 @@ grand-mean-shrunk expected-returns estimator used only by max-Sharpe
 Four allocators behind a common interface: `hrp.py` (the only genuinely new code,
 returning a frozen `HRPResult`), `ivp.py`, `naive.py` (1/N, first-class), and
 `markowitz_adapter.py` (min-var + max-Sharpe on the shared covariance, using a
-Cholesky solve — it never inverts `Sigma`). cvxpy is lazily imported and only for
-max-Sharpe.
+Cholesky solve, so it never inverts `Sigma`). cvxpy is lazily imported and only
+for max-Sharpe.
 
 ### `backtest/`
 
 `walk_forward.py` is the no-lookahead engine: anchored/expanding windows, purge +
 embargo ([ADR-0005](decisions/0005-purge-embargo.md)), and `signal.shift(1)` at
 the rebalance boundary. `costs.py` applies the per-side bps grid against realized
-turnover. `stats.py` holds JKM, the Politis–Romano stationary block bootstrap, and
+turnover. `stats.py` holds JKM, the Politis-Romano stationary block bootstrap, and
 HAC (Andrews 1991) inference.
 
 ### `evaluation/`
@@ -140,14 +140,14 @@ The compute core guarantees, and tests enforce:
 
 1. **Simplex.** Every allocator's weights sum to 1 (1e-12) and are non-negative.
 2. **No-lookahead.** Shrinkage intensity and the RMT cutoff are deterministic
-   functions of the in-sample window — perturbing future data leaves them
+   functions of the in-sample window, so perturbing future data leaves them
    unchanged. Weights apply only to the subsequent OOS window.
 3. **Bijection.** `getQuasiDiag` is a permutation of the asset index; the
    reordered covariance stays symmetric.
 4. **Scale & permutation invariance.** Rescaling returns or relabeling assets
    does not change the realized allocation.
-5. **Robustness.** A block-perfectly-correlated (singular) covariance that breaks
-   Markowitz CLA still yields valid HRP weights.
+5. **Singular-cov survival.** A block-perfectly-correlated (singular) covariance
+   that breaks Markowitz CLA still yields valid HRP weights.
 6. **DSR monotonicity.** The Deflated Sharpe is non-increasing in `n_trials`
    (full `(k+2)/4` kurtosis term).
 7. **Verdict safety.** `headline_verdict` cannot emit "HRP beats 1/N" while the
@@ -160,18 +160,18 @@ The compute core guarantees, and tests enforce:
 
 Tests are partitioned by intent under `tests/` (markers in `pyproject.toml`):
 
-- **`unit/`** — isolated kernels: distance formula, `getClusterVar` weighting, the
+- **`unit/`**: isolated kernels: distance formula, `getClusterVar` weighting, the
   verdict truth table.
-- **`property/`** (Hypothesis) — the invariants above: simplex, no-lookahead,
+- **`property/`** (Hypothesis): the invariants above: simplex, no-lookahead,
   quasi-diag bijection, scale/permutation invariance, DSR monotonicity.
-- **`parity/`** — golden checks against independent references: HRP vs
-  PyPortfolioOpt (+ a second oracle) at 1e-7, Ledoit–Wolf vs scikit-learn at
-  1e-10, JKM vs Memmel's closed form at 1e-8, DSR vs the Bailey–LdP table at 1e-4.
-- **`regression/`** — the honest null, locked: HRP OOS variance < Markowitz
+- **`parity/`**: golden checks against independent references: HRP vs
+  PyPortfolioOpt (plus a second oracle) at 1e-7, Ledoit-Wolf vs scikit-learn at
+  1e-10, JKM vs Memmel's closed form at 1e-8, DSR vs the Bailey-LdP table at 1e-4.
+- **`regression/`**: the honest null, locked: HRP OOS variance < Markowitz
   min-var while the HRP-vs-1/N Sharpe-gap CI straddles zero; the singular-cov
-  robustness case; the new-constituent exclusion fixture; determinism; cost-grid
+  survival case; the new-constituent exclusion fixture; determinism; cost-grid
   monotonicity; the import-purity subprocess test.
-- **`integration/`** — end-to-end pipeline runs (may touch data/network).
+- **`integration/`**: end-to-end pipeline runs (may touch data/network).
 
 Seeded fixtures in `conftest.py` (`one_factor`, `block_correlation`, `pure_noise`,
 `singular_cov`) give every layer deterministic, adversarial inputs.
