@@ -145,6 +145,10 @@ def run(**kwargs: Any) -> int:
     """
     # Imports are local so that importing this module stays side-effect free and
     # Typer/numpy heavy modules are only paid for at invocation time.
+    import math
+
+    import numpy as np
+
     from hrp._exceptions import HRPError
     from hrp.allocate.hrp import hrp_allocate
     from hrp.allocate.ivp import ivp_weights
@@ -215,6 +219,18 @@ def run(**kwargs: Any) -> int:
         hrp_oos = oos_returns["hrp"]
         naive_oos = oos_returns["naive_1n"]
 
+        # Per-observation (NON-annualized) OOS Sharpe of every trial we ran. This
+        # is the exact unit the Deflated Sharpe expects, both for the observed
+        # Sharpe and for the cross-trial variance V.
+        def _per_obs_sharpe(series: pd.Series) -> float:
+            excess = series.astype("float64")
+            std = float(excess.std(ddof=1))
+            if std > 0.0 and math.isfinite(std):
+                return float(excess.mean()) / std
+            return 0.0
+
+        trial_per_obs_sharpes = [_per_obs_sharpe(s) for s in oos_returns.values()]
+
         # --- Sharpe-difference inference (HRP vs 1/N) ---------------------
         comparison = block_bootstrap_sharpe_gap(hrp_oos, naive_oos, n_bootstrap=n_bootstrap)
 
@@ -222,14 +238,30 @@ def run(**kwargs: Any) -> int:
         naive_sharpe = sharpe_ratio(naive_oos)
         hrp_vol = annualized_vol(hrp_oos)
 
-        # Deflated Sharpe over the FULL configuration grid would be wired in by
-        # the orchestrator; here we count this single demo configuration.
+        # Deflated Sharpe deflated honestly across the trials we ACTUALLY ran
+        # (hrp, ivp, naive_1n). ``variance_of_trial_sharpes`` is the SAMPLE
+        # variance (ddof=1) of those per-observation trial Sharpes - in the same
+        # per-observation units as ``per_obs_hrp`` - NOT a hardcoded 0.0 (which
+        # would collapse the deflation benchmark and pin the DSR). With < 2
+        # trials the cross-trial variance is undefined, so we fall back to Lo's
+        # (2002) single-series analytic variance of the Sharpe estimator,
+        # Var(SR_hat) ~= (1 + SR^2 / 2) / n_obs, in the same per-obs units.
         per_obs_hrp = hrp_sharpe / (252.0**0.5)
+        n_obs_hrp = len(hrp_oos)
+        n_trials = len(trial_per_obs_sharpes)
+        if n_trials >= 2:
+            variance_of_trial_sharpes = float(np.var(trial_per_obs_sharpes, ddof=1))
+        elif n_obs_hrp >= 2:
+            variance_of_trial_sharpes = (1.0 + 0.5 * per_obs_hrp**2) / float(n_obs_hrp)
+        else:
+            variance_of_trial_sharpes = 0.0
+        if not math.isfinite(variance_of_trial_sharpes) or variance_of_trial_sharpes < 0.0:
+            variance_of_trial_sharpes = 0.0
         dsr = deflated_sharpe_ratio(
             per_obs_hrp,
-            n_obs=len(hrp_oos),
-            n_trials=1,
-            variance_of_trial_sharpes=0.0,
+            n_obs=n_obs_hrp,
+            n_trials=max(1, n_trials),
+            variance_of_trial_sharpes=variance_of_trial_sharpes,
         )
 
         verdict = derive_verdict(
