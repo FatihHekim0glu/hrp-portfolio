@@ -32,6 +32,7 @@ classifiers = [
     "Typing :: Typed",
 ]
 dependencies = [
+    "quantcore @ git+https://github.com/FatihHekim0glu/quantcore@v0.1.0",
     "numpy>=1.26",
     "pandas>=2.0",
     "scipy>=1.11",
